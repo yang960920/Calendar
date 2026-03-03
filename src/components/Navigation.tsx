@@ -13,8 +13,8 @@ export const Navigation = () => {
     const user = useStore(useAuthStore, (state) => state.user);
     const logout = useAuthStore((state) => state.logout);
 
-    // 로그인 페이지에서는 네비게이션을 숨김
-    if (pathname === "/login") return null;
+    // 로그인 및 관리자 페이지에서는 네비게이션을 숨김
+    if (pathname === "/login" || pathname.startsWith("/admin")) return null;
 
     return (
         <nav className="w-64 border-r bg-card flex flex-col h-full flex-shrink-0">

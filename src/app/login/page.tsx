@@ -2,10 +2,12 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
     const login = useAuthStore((state) => state.login);
@@ -24,6 +26,16 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
             <div className="w-full max-w-md p-8 bg-card rounded-2xl shadow-lg border">
+                {/* 관리자 페이지 바로가기 */}
+                <div className="mb-6">
+                    <Link href="/admin/login">
+                        <div className="flex items-center justify-center gap-2 p-3 rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
+                            <ShieldCheck className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">관리자 로그인 페이지로 이동</span>
+                        </div>
+                    </Link>
+                </div>
+
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-primary mb-2">Keeper Calendar</h1>
                     <p className="text-sm text-muted-foreground">업무일지 시스템 로그인이 필요합니다</p>

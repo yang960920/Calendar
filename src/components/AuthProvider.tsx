@@ -22,7 +22,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         // zustand store에서 hydrate 처리가 끝난 후
         // 로그인 안 한 사용자가 login이 아닌 다른 페이지에 접속하려 할 때
-        if (isAuthenticated === false && pathname !== "/login") {
+        // (단, /admin 경로는 자체 인증 시스템을 사용하므로 제외)
+        if (isAuthenticated === false && pathname !== "/login" && !pathname.startsWith("/admin")) {
             router.push("/login");
         }
     }, [isAuthenticated, pathname, router, mounted]);

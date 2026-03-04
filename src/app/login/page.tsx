@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
+import { loginUser } from "@/app/actions/employee";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +20,23 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // TODO: Update to use real API endpoint instead of hardcoded users
-        alert("데이터베이스 연동 작업 진행 중입니다.");
+        try {
+            const res = await loginUser(id, password);
+            if (res.success && res.data) {
+                // 로그인 성공, Zustand 상태 업데이트
+                login({
+                    id: res.data.id,
+                    name: res.data.name,
+                    role: res.data.role as any, // "CREATOR" | "PARTICIPANT"
+                });
+                router.push("/");
+            } else {
+                alert(res.error || "로그인에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("서버 오류가 발생했습니다.");
+        }
     };
 
     return (

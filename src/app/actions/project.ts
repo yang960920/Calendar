@@ -26,17 +26,21 @@ export async function createProject(data: {
             }
         });
 
-        // 활동 로그 기록
-        await prisma.activityLog.create({
-            data: {
-                action: "프로젝트 생성",
-                entityType: "PROJECT",
-                entityId: newProject.id,
-                details: `"${data.title}" 프로젝트를 생성했습니다. (참여자: ${data.participantIds.length}명)`,
-                userId: data.creatorId,
-                projectId: newProject.id,
-            }
-        });
+        // 활동 로그 기록 (실패해도 프로젝트 생성에 영향 없음)
+        try {
+            await prisma.activityLog.create({
+                data: {
+                    action: "프로젝트 생성",
+                    entityType: "PROJECT",
+                    entityId: newProject.id,
+                    details: `"${data.title}" 프로젝트를 생성했습니다. (참여자: ${data.participantIds.length}명)`,
+                    userId: data.creatorId,
+                    projectId: newProject.id,
+                }
+            });
+        } catch (logErr) {
+            console.error("[ActivityLog] 프로젝트 로그 기록 실패:", logErr);
+        }
 
         return { success: true, data: newProject };
     } catch (error: any) {

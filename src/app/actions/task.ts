@@ -3,6 +3,36 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+/**
+ * 활동 로그를 안전하게 기록합니다 (실패해도 메인 로직에 영향 없음)
+ */
+async function logActivity(data: {
+    action: string;
+    entityType: string;
+    entityId: string;
+    details: string;
+    userId: string;
+    projectId?: string;
+    taskId?: string | null;
+}) {
+    try {
+        await prisma.activityLog.create({
+            data: {
+                action: data.action,
+                entityType: data.entityType,
+                entityId: data.entityId,
+                details: data.details,
+                userId: data.userId,
+                projectId: data.projectId || null,
+                taskId: data.taskId || null,
+            }
+        });
+    } catch (err) {
+        console.error("[ActivityLog] 로그 기록 실패:", err);
+        // 로그 실패는 메인 로직에 영향을 주지 않음
+    }
+}
+
 export async function createTask(data: {
     title: string;
     content?: string;
@@ -58,18 +88,16 @@ export async function createTask(data: {
             }
         });
 
-        // 활동 로그 기록
+        // 활동 로그 기록 (별도 try/catch로 메인 로직에 영향 없음)
         if (data.assigneeId) {
-            await prisma.activityLog.create({
-                data: {
-                    action: "업무 생성",
-                    entityType: "TASK",
-                    entityId: newTask.id,
-                    details: `"${data.title}" 업무를 생성했습니다. (기간: ${data.date} ~ ${data.endDate})`,
-                    userId: data.assigneeId,
-                    projectId: targetProjectId,
-                    taskId: newTask.id,
-                }
+            await logActivity({
+                action: "업무 생성",
+                entityType: "TASK",
+                entityId: newTask.id,
+                details: `"${data.title}" 업무를 생성했습니다. (기간: ${data.date} ~ ${data.endDate})`,
+                userId: data.assigneeId,
+                projectId: targetProjectId,
+                taskId: newTask.id,
             });
         }
 
@@ -93,20 +121,18 @@ export async function updateTaskStatus(taskId: string, data: { done: number, isC
             }
         });
 
-        // 활동 로그 기록
+        // 활동 로그 기록 (별도 try/catch로 메인 로직에 영향 없음)
         if (updated.assigneeId) {
-            await prisma.activityLog.create({
-                data: {
-                    action: data.isCompleted ? "업무 완료" : "업무 상태 변경",
-                    entityType: "TASK",
-                    entityId: taskId,
-                    details: data.isCompleted
-                        ? `"${updated.title}" 업무를 완료 처리했습니다.`
-                        : `"${updated.title}" 업무 상태를 진행 중으로 변경했습니다.`,
-                    userId: updated.assigneeId,
-                    projectId: updated.projectId,
-                    taskId: taskId,
-                }
+            await logActivity({
+                action: data.isCompleted ? "업무 완료" : "업무 상태 변경",
+                entityType: "TASK",
+                entityId: taskId,
+                details: data.isCompleted
+                    ? `"${updated.title}" 업무를 완료 처리했습니다.`
+                    : `"${updated.title}" 업무 상태를 진행 중으로 변경했습니다.`,
+                userId: updated.assigneeId,
+                projectId: updated.projectId,
+                taskId: taskId,
             });
         }
 
@@ -135,17 +161,14 @@ export async function deleteTask(taskId: string, userId?: string) {
         // 활동 로그 기록 (삭제 전에 기록 — 삭제 후에는 taskId 참조 불가)
         const logUserId = userId || task.assigneeId;
         if (logUserId) {
-            await prisma.activityLog.create({
-                data: {
-                    action: "업무 삭제",
-                    entityType: "TASK",
-                    entityId: taskId,
-                    details: `"${task.title}" 업무를 삭제했습니다.`,
-                    userId: logUserId,
-                    projectId: task.projectId,
-                    // taskId는 CASCADE로 삭제되므로 null 처리
-                    taskId: null,
-                }
+            await logActivity({
+                action: "업무 삭제",
+                entityType: "TASK",
+                entityId: taskId,
+                details: `"${task.title}" 업무를 삭제했습니다.`,
+                userId: logUserId,
+                projectId: task.projectId,
+                taskId: null, // CASCADE로 삭제되므로 null 처리
             });
         }
 

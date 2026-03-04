@@ -10,7 +10,7 @@ const client = new Client({
 async function main() {
     await client.connect();
 
-    const departments = ['대표이사 (CEO)', '경영지원본부', 'R&D센터', '사업총괄본부'];
+    const departments = ['대표이사 (CEO)', '경영지원본부', 'R&D센터', '사업총괄본부', '도료사업부'];
 
     console.log("Seeding departments directly to:", process.env.DATABASE_URL.split('@')[1]);
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     Dialog,
     DialogContent,
@@ -24,17 +25,28 @@ interface EditEmployeeDialogProps {
 
 export function EditEmployeeDialog({ user, departments, onUpdated }: EditEmployeeDialogProps) {
     const [open, setOpen] = useState(false);
+    const [name, setName] = useState(user.name);
     const [departmentId, setDepartmentId] = useState<string>(user.departmentId || "none");
     const [isCreator, setIsCreator] = useState(user.role === "CREATOR");
     const [isParticipant, setIsParticipant] = useState(user.role === "CREATOR" || user.role === "PARTICIPANT");
+
+    // 이력서 파일 상태
+    const [resumeUrl, setResumeUrl] = useState<string | null>(user.resumeUrl || null);
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [removeResume, setRemoveResume] = useState(false); // 기존 이력서 삭제 체크여부
+
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (open) {
+            setName(user.name);
             setDepartmentId(user.departmentId || "none");
             setIsCreator(user.role === "CREATOR");
             setIsParticipant(user.role === "CREATOR" || user.role === "PARTICIPANT");
+            setResumeUrl(user.resumeUrl || null);
+            setResumeFile(null);
+            setRemoveResume(false);
         }
     }, [open, user]);
 
@@ -55,8 +67,48 @@ export function EditEmployeeDialog({ user, departments, onUpdated }: EditEmploye
             return;
         }
 
+        if (!name.trim()) {
+            alert("이름을 입력해주세요.");
+            return;
+        }
+
         setIsSaving(true);
-        const res = await updateEmployee(user.id, { role, departmentId });
+        let finalResumeUrl = resumeUrl;
+
+        // 1) "기존 이력서 삭제"가 체크되었으면 null로 덮어쓰기
+        if (removeResume) {
+            finalResumeUrl = null;
+        }
+
+        // 2) 새로 파일이 올라갔으면 해당 파일을 Vercel Blob에 업로드
+        if (resumeFile) {
+            try {
+                const response = await fetch(`/api/upload?filename=${encodeURIComponent(resumeFile.name)}`, {
+                    method: 'POST',
+                    body: resumeFile,
+                });
+                if (response.ok) {
+                    const blob = await response.json();
+                    finalResumeUrl = blob.url;
+                } else {
+                    alert("이력서 업로드에 실패했습니다.");
+                    setIsSaving(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                alert("이력서 업로드 중 오류가 발생했습니다.");
+                setIsSaving(false);
+                return;
+            }
+        }
+
+        const res = await updateEmployee(user.id, {
+            name,
+            role,
+            departmentId,
+            resumeUrl: finalResumeUrl
+        });
         setIsSaving(false);
 
         if (res.success) {
@@ -92,10 +144,20 @@ export function EditEmployeeDialog({ user, departments, onUpdated }: EditEmploye
                 <DialogHeader>
                     <DialogTitle>사원 정보 수정</DialogTitle>
                     <DialogDescription className="text-zinc-400">
-                        {user.name} 님의 부서 및 권한을 수정합니다.
+                        {user.name} 사원의 정보, 부서 및 권한을 수정합니다.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
+                    <div className="space-y-3">
+                        <Label>이름 (표시명)</Label>
+                        <Input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="bg-zinc-800 border-zinc-700 text-white"
+                        />
+                        <p className="text-xs text-zinc-500">※ 로그인 ID({user.id})와 비밀번호는 변경되지 않습니다.</p>
+                    </div>
+
                     <div className="space-y-3">
                         <Label>소속 부서</Label>
                         <Select value={departmentId} onValueChange={setDepartmentId}>
@@ -109,6 +171,42 @@ export function EditEmployeeDialog({ user, departments, onUpdated }: EditEmploye
                                 ))}
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                        <Label>이력서/포트폴리오</Label>
+                        {resumeUrl && !removeResume && (
+                            <div className="flex items-center gap-3 bg-zinc-800/50 p-3 rounded-md border border-zinc-700">
+                                <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-sm text-blue-400 hover:underline truncate">
+                                    기존 첨부파일 보기
+                                </a>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                    onClick={() => setRemoveResume(true)}
+                                >
+                                    삭제
+                                </Button>
+                            </div>
+                        )}
+                        {(removeResume || !resumeUrl) && (
+                            <Input
+                                type="file"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                        setResumeFile(e.target.files[0]);
+                                    } else {
+                                        setResumeFile(null);
+                                    }
+                                }}
+                                className="bg-zinc-800 border-zinc-700 text-white text-sm cursor-pointer"
+                            />
+                        )}
+                        {removeResume && resumeUrl && (
+                            <p className="text-xs text-red-500 mt-1">기존 이력서가 저장 시 삭제됩니다.</p>
+                        )}
                     </div>
 
                     <div className="space-y-4 pt-2">

@@ -27,6 +27,7 @@ model User {
   role         Role        @default(PARTICIPANT)
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
+  resumeUrl    String?     // Vercel Blob 이력서/포트폴리오 다운로드 링크
   tasks        Task[]      @relation("TaskAssignee")
   projects     Project[]   @relation("ProjectCreator")
   activityLogs ActivityLog[]

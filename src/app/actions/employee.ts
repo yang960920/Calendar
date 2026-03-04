@@ -70,6 +70,7 @@ export async function createEmployee(data: {
     birthDate: string;
     role: "CREATOR" | "PARTICIPANT" | "NONE";
     departmentId?: string;
+    resumeUrl?: string;
 }) {
     try {
         // ID 중복 체킹
@@ -88,6 +89,7 @@ export async function createEmployee(data: {
                 password: data.birthDate,
                 role: data.role === "NONE" ? "PARTICIPANT" : data.role,
                 departmentId: data.departmentId === "none" ? null : data.departmentId,
+                resumeUrl: data.resumeUrl || null,
             },
         });
 
@@ -103,17 +105,21 @@ export async function createEmployee(data: {
  * 사원 정보를 수정합니다.
  */
 export async function updateEmployee(id: string, data: {
+    name?: string;
     role?: "CREATOR" | "PARTICIPANT";
     departmentId?: string | null;
+    resumeUrl?: string | null;
 }) {
     try {
         const updatedUser = await prisma.user.update({
             where: { id },
             data: {
+                ...(data.name && { name: data.name }),
                 ...(data.role && { role: data.role }),
                 ...(data.departmentId !== undefined && {
                     departmentId: data.departmentId === "none" ? null : data.departmentId
                 }),
+                ...(data.resumeUrl !== undefined && { resumeUrl: data.resumeUrl }),
             }
         });
         revalidatePath("/admin/employees");

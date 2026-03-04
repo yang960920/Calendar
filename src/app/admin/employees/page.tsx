@@ -25,11 +25,14 @@ export default function AdminEmployeesPage() {
     const [departmentId, setDepartmentId] = useState<string>("none");
     const [isCreator, setIsCreator] = useState(false);
     const [isParticipant, setIsParticipant] = useState(false);
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 데이터 상태
     const [users, setUsers] = useState<any[]>([]);
     const [departments, setDepartments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const loadData = async () => {
         setLoading(true);
@@ -80,12 +83,40 @@ export default function AdminEmployeesPage() {
             return;
         }
 
+        setIsSubmitting(true);
+        let resumeUrl: string | undefined = undefined;
+
+        if (resumeFile) {
+            try {
+                const response = await fetch(`/api/upload?filename=${encodeURIComponent(resumeFile.name)}`, {
+                    method: 'POST',
+                    body: resumeFile,
+                });
+                if (response.ok) {
+                    const blob = await response.json();
+                    resumeUrl = blob.url;
+                } else {
+                    alert("이력서 업로드에 실패했습니다.");
+                    setIsSubmitting(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                alert("이력서 업로드 중 오류가 발생했습니다.");
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
         const result = await createEmployee({
             name,
             birthDate,
             role,
             departmentId: departmentId === "none" ? undefined : departmentId,
+            resumeUrl,
         });
+
+        setIsSubmitting(false);
 
         if (result.success) {
             alert(`${name}님 등록 완료 (ID: ${name}, PW: ${birthDate})`);
@@ -95,12 +126,29 @@ export default function AdminEmployeesPage() {
             setDepartmentId("none");
             setIsCreator(false);
             setIsParticipant(false);
+            setResumeFile(null);
             // 목록 새로고침
             loadData();
         } else {
             alert(`등록 실패: ${result.error}`);
         }
     };
+
+    // 필터링 및 정렬
+    const filteredUsers = users
+        .filter(u => {
+            if (!searchTerm) return true;
+            return u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.id.toLowerCase().includes(searchTerm.toLowerCase());
+        })
+        .sort((a, b) => {
+            // 1차: 부서명 (오름차순, 없는 경우 맨 뒤)
+            const depA = a.department?.name || "\uFFFF";
+            const depB = b.department?.name || "\uFFFF";
+            if (depA < depB) return -1;
+            if (depA > depB) return 1;
+            // 2차: 이름 
+            return a.name.localeCompare(b.name);
+        });
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-12">
@@ -163,6 +211,22 @@ export default function AdminEmployeesPage() {
                             <p className="text-xs text-zinc-500">ID와 비밀번호는 자동으로 설정됩니다.</p>
                         </div>
 
+                        <div className="space-y-3">
+                            <Label htmlFor="resume" className="text-zinc-300">이력서 및 포트폴리오 (선택)</Label>
+                            <Input
+                                id="resume"
+                                type="file"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                        setResumeFile(e.target.files[0]);
+                                    } else {
+                                        setResumeFile(null);
+                                    }
+                                }}
+                                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 cursor-pointer text-sm"
+                            />
+                        </div>
+
                         <div className="space-y-4 pt-2">
                             <Label className="text-zinc-300 block mb-2">권한 부여</Label>
                             <div className="flex flex-col gap-3 p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-lg">
@@ -195,24 +259,35 @@ export default function AdminEmployeesPage() {
                             </div>
                         </div>
 
-                        <Button type="submit" className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
-                            사원 등록하기
+                        <Button type="submit" disabled={isSubmitting} className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                            {isSubmitting ? "업로드 및 등록 중..." : "사원 등록하기"}
                         </Button>
                     </form>
                 </div>
 
                 {/* 2/3 영역: 사원 명부 */}
-                <div className="flex-1 w-full bg-zinc-900/40 p-6 border border-zinc-800 rounded-xl overflow-x-auto">
-                    <h2 className="text-xl font-semibold text-white mb-6 flex border-b border-zinc-800 pb-4">
-                        전체 사원 명부
-                    </h2>
+                <div className="flex-1 w-full bg-zinc-900/40 p-6 border border-zinc-800 rounded-xl overflow-x-auto flex flex-col">
+                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-800">
+                        <h2 className="text-xl font-semibold text-white">
+                            전체 사원 명부
+                        </h2>
+                        <div className="w-64">
+                            <Input
+                                placeholder="사원명 또는 ID 검색..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-zinc-800 border-zinc-700 text-white"
+                            />
+                        </div>
+                    </div>
 
                     <div className="rounded-md border border-zinc-800 overflow-hidden min-w-[600px]">
                         <Table>
                             <TableHeader className="bg-zinc-800/50">
                                 <TableRow className="border-zinc-800 hover:bg-transparent">
-                                    <TableHead className="text-zinc-400 w-[150px]">이름 (ID)</TableHead>
-                                    <TableHead className="text-zinc-400 w-[180px]">부서</TableHead>
+                                    <TableHead className="text-zinc-400 w-[120px]">이름 (ID)</TableHead>
+                                    <TableHead className="text-zinc-400 w-[150px]">부서</TableHead>
+                                    <TableHead className="text-zinc-400 w-[120px]">이력서</TableHead>
                                     <TableHead className="text-zinc-400 flex-1">권한 (역할)</TableHead>
                                     <TableHead className="text-zinc-400 text-right w-[100px]">관리</TableHead>
                                 </TableRow>
@@ -220,18 +295,29 @@ export default function AdminEmployeesPage() {
                             <TableBody>
                                 {loading && (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-zinc-500 p-4">데이터를 불러오는 중입니다...</TableCell>
+                                        <TableCell colSpan={5} className="text-center text-zinc-500 p-4">데이터를 불러오는 중입니다...</TableCell>
                                     </TableRow>
                                 )}
-                                {!loading && users.length === 0 && (
+                                {!loading && filteredUsers.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-zinc-500 p-4">등록된 사원이 없습니다.</TableCell>
+                                        <TableCell colSpan={5} className="text-center text-zinc-500 p-4">
+                                            {searchTerm ? "검색 결과가 없습니다." : "등록된 사원이 없습니다."}
+                                        </TableCell>
                                     </TableRow>
                                 )}
-                                {!loading && users.map((user) => (
+                                {!loading && filteredUsers.map((user) => (
                                     <TableRow key={user.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                                         <TableCell className="font-medium text-white">{user.name}</TableCell>
                                         <TableCell className="text-zinc-300">{user.department?.name || "-"}</TableCell>
+                                        <TableCell>
+                                            {user.resumeUrl ? (
+                                                <a href={user.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs underline truncate w-[100px] block">
+                                                    다운로드
+                                                </a>
+                                            ) : (
+                                                <span className="text-zinc-600 text-xs">-</span>
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             <Badge variant="outline"
                                                 className={user.role === "CREATOR"

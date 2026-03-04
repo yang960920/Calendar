@@ -1,12 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 
 /**
  * 모든 사원 목록을 가져옵니다.
  */
 export async function getEmployees() {
+    noStore();
     try {
         const users = await prisma.user.findMany({
             include: {
@@ -27,6 +28,7 @@ export async function getEmployees() {
  * 모든 부서 목록을 가져옵니다.
  */
 export async function getDepartments() {
+    noStore();
     try {
         const deps = await prisma.department.findMany({
             orderBy: { name: 'asc' }

@@ -41,6 +41,7 @@ export async function getInitialData(userId: string) {
             creatorId: p.creatorId,
             participantIds: p.participants.map((u: any) => u.id),
             createdAt: p.createdAt.toISOString(),
+            endDate: p.endDate.toISOString(),
         }));
 
         const formattedTasks = tasks.map(t => ({

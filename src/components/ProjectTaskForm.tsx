@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle } from "lucide-react";
 import { useTaskStore } from "@/store/useTaskStore";
 import {
     Dialog,
@@ -28,9 +28,10 @@ import { createTask } from "@/app/actions/task";
 interface ProjectTaskFormProps {
     projectId: string;
     participants: string[];
+    projectEndDate?: string; // 프로젝트 종료일 (ISO)
 }
 
-export const ProjectTaskForm = ({ projectId, participants }: ProjectTaskFormProps) => {
+export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: ProjectTaskFormProps) => {
     const addTask = useTaskStore((state) => state.addTask);
     const [open, setOpen] = useState(false);
     const [date, setDate] = useState("");
@@ -58,6 +59,12 @@ export const ProjectTaskForm = ({ projectId, participants }: ProjectTaskFormProp
     // 초기 생성 시 프로젝트 업무는 담당자가 완료하기 전까지 done=0
     const [assigneeId, setAssigneeId] = useState<string>("");
 
+    // 업무 종료일이 프로젝트 종료일을 초과하는지 확인
+    const isTaskEndDateOverProject = () => {
+        if (!projectEndDate || !endDate) return false;
+        return new Date(endDate) > new Date(projectEndDate);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -71,6 +78,15 @@ export const ProjectTaskForm = ({ projectId, participants }: ProjectTaskFormProp
         if (isNaN(plannedNum) || plannedNum <= 0) {
             alert("계획량은 0보다 커야 하며, 숫자로 입력해주세요.");
             return;
+        }
+
+        // 업무 종료일이 프로젝트 종료일을 넘기는 경우 확인
+        if (isTaskEndDateOverProject()) {
+            const projectEnd = format(new Date(projectEndDate!), "yyyy.MM.dd");
+            const confirmed = confirm(
+                `⚠️ 업무 종료일(${endDate})이 프로젝트 종료일(${projectEnd})을 초과합니다.\n\n그래도 생성하시겠습니까?`
+            );
+            if (!confirmed) return;
         }
 
         try {
@@ -148,9 +164,21 @@ export const ProjectTaskForm = ({ projectId, participants }: ProjectTaskFormProp
                                 min={date}
                                 onChange={(e) => setEndDate(e.target.value)}
                                 required
+                                className={isTaskEndDateOverProject() ? "border-amber-500 ring-1 ring-amber-500" : ""}
                             />
                         </div>
                     </div>
+
+                    {/* 업무 종료일 > 프로젝트 종료일 경고 */}
+                    {isTaskEndDateOverProject() && (
+                        <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+                            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                            <p className="text-xs leading-relaxed">
+                                업무 종료일이 프로젝트 종료일({projectEndDate ? format(new Date(projectEndDate), "yyyy.MM.dd") : "-"})을 초과합니다.
+                                프로젝트 일정에 맞게 조정하는 것을 권장합니다.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="grid gap-2">
                         <Label htmlFor="assignee">담당자 배정 (필수)</Label>

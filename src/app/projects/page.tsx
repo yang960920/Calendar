@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, FolderKanban } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderKanban, CalendarClock } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
@@ -35,6 +35,12 @@ export default function ProjectsPage() {
 
     const handlePrevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
+    // 종료일 경과 여부 확인
+    const isOverdue = (endDate: string) => {
+        if (!endDate) return false;
+        return new Date(endDate) < new Date();
     };
 
     if (!user) {
@@ -84,6 +90,13 @@ export default function ProjectsPage() {
                                     <p className="text-xs text-muted-foreground mt-1">
                                         생성일: {format(new Date(project.createdAt), "yyyy.MM.dd")}
                                     </p>
+                                    {project.endDate && (
+                                        <p className={`text-xs mt-0.5 flex items-center gap-1 ${isOverdue(project.endDate) ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+                                            <CalendarClock className="h-3 w-3" />
+                                            종료일: {format(new Date(project.endDate), "yyyy.MM.dd")}
+                                            {isOverdue(project.endDate) && " (만료)"}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="mt-auto pt-4 border-t flex items-center justify-between text-xs text-muted-foreground">
                                     <span>생성자: {project.creatorId}</span>

@@ -7,6 +7,7 @@ export interface Project {
     creatorId: string; // "김권찬"
     participantIds: string[]; // ["양현준", ...]
     createdAt: string;
+    endDate: string; // 프로젝트 종료일 (ISO)
 }
 
 interface ProjectState {

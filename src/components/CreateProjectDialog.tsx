@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { format, addMonths } from "date-fns";
 import { Plus } from "lucide-react";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -22,6 +23,7 @@ export const CreateProjectDialog = () => {
     const addProject = useProjectStore((state) => state.addProject);
     const [open, setOpen] = useState(false);
     const [title, setTitle] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
     const [users, setUsers] = useState<any[]>([]);
 
@@ -33,6 +35,8 @@ export const CreateProjectDialog = () => {
             }
         }
         fetchUsers();
+        // 기본 종료일: 한 달 뒤
+        setEndDate(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
     }, []);
 
     // Only creators can create projects
@@ -52,26 +56,31 @@ export const CreateProjectDialog = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim()) return;
+        if (!endDate) {
+            alert("프로젝트 종료일을 지정해주세요.");
+            return;
+        }
 
         try {
-            // 1. DB에 저장 (Server Action)
             const result = await createProject({
                 title,
                 creatorId: user.id,
                 participantIds: selectedParticipants,
+                endDate,
             });
 
             if (result.success && result.data) {
-                // 2. Zustand 로컬 스토어 업데이트 (UI 즉각 반영)
                 addProject({
                     id: result.data.id,
                     title: result.data.name,
                     creatorId: result.data.creatorId,
                     participantIds: selectedParticipants,
                     createdAt: result.data.createdAt.toISOString(),
-                } as any); // Type assertion for UI compatibility
+                    endDate: result.data.endDate.toISOString(),
+                } as any);
 
                 setTitle("");
+                setEndDate(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
                 setSelectedParticipants([]);
                 setOpen(false);
             } else {
@@ -105,6 +114,21 @@ export const CreateProjectDialog = () => {
                             placeholder="예: 홈페이지 리뉴얼"
                             required
                         />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="endDate">프로젝트 종료일</Label>
+                        <Input
+                            id="endDate"
+                            type="date"
+                            value={endDate}
+                            min={format(new Date(), "yyyy-MM-dd")}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            프로젝트 전체의 마감 기한을 설정합니다.
+                        </p>
                     </div>
 
                     <div className="grid gap-2 mt-2">

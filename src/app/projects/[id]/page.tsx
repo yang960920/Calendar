@@ -2,7 +2,8 @@
 
 import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { format } from "date-fns";
+import { ChevronLeft, CalendarClock } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useTaskStore } from "@/store/useTaskStore";
@@ -11,6 +12,8 @@ import { CalendarGrid } from "@/components/CalendarGrid";
 import { Button } from "@/components/ui/button";
 import { ProjectTaskForm } from "@/components/ProjectTaskForm";
 import { EditTaskDialog } from "@/components/EditTaskDialog";
+import { EditProjectDialog } from "@/components/EditProjectDialog";
+import { ManageParticipantsDialog } from "@/components/ManageParticipantsDialog";
 import {
     Select,
     SelectContent,
@@ -69,6 +72,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         ? projectMonthTasks
         : projectMonthTasks.filter(t => t.assigneeId === user?.id);
 
+    // 종료일 경과 확인
+    const isOverdue = project.endDate && new Date(project.endDate) < new Date();
+
     return (
         <div className="min-h-screen bg-background text-foreground pb-20 p-8 max-w-7xl mx-auto flex flex-col h-full">
             <header className="mb-8 border-b pb-6">
@@ -82,13 +88,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded">PROJECT</span>
                             <h1 className="text-3xl font-extrabold tracking-tight">{project.title}</h1>
                         </div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-4">
+                        <div className="text-sm text-muted-foreground flex items-center gap-4 flex-wrap">
                             <span>생성자: {project.creatorId}</span>
                             <span>참여 인원: {project.participantIds.map(id => {
                                 const found = users.find(u => u.id === id);
                                 return found ? found.name : id;
                             }).join(', ')}</span>
+                            {project.endDate && (
+                                <span className={`flex items-center gap-1 ${isOverdue ? "text-red-500 font-semibold" : ""}`}>
+                                    <CalendarClock className="h-3.5 w-3.5" />
+                                    종료일: {format(new Date(project.endDate), "yyyy.MM.dd")}
+                                    {isOverdue && " (만료)"}
+                                </span>
+                            )}
                         </div>
+                        {/* Creator 전용 관리 버튼 */}
+                        {user?.role === "CREATOR" && user.id === project.creatorId && (
+                            <div className="flex items-center gap-2 mt-3">
+                                <EditProjectDialog project={project} userId={user.id} />
+                                <ManageParticipantsDialog project={project} userId={user.id} />
+                            </div>
+                        )}
                     </div>
 
                     {/* 월 선택 필터 */}
@@ -135,7 +155,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
             {/* 역할(Role)에 따른 업무 생성 버튼: 생성자만 보임 */}
             {user?.role === "CREATOR" && (
-                <ProjectTaskForm projectId={projectId} participants={project.participantIds} />
+                <ProjectTaskForm
+                    projectId={projectId}
+                    participants={project.participantIds}
+                    projectEndDate={project.endDate}
+                />
             )}
 
             {/* 수정 컴포넌트 마운트 */}

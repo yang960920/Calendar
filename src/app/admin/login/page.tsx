@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminStore } from "@/store/useAdminStore";
+import { loginAdmin } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,16 +14,25 @@ export default function AdminLoginPage() {
 
     const [id, setId] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
 
-        // 관리자 하드코딩 인증
-        if (id === "hanmirco" && password === "victorhan77#") {
-            adminLogin();
-            router.push("/admin/achievement"); // 기본 대시보드 탭으로 리디렉트
-        } else {
-            alert("관리자 아이디 또는 비밀번호가 일치하지 않습니다.");
+        try {
+            const result = await loginAdmin(id, password);
+            if (result.success) {
+                adminLogin();
+                router.push("/admin/achievement");
+            } else {
+                alert(result.error || "관리자 아이디 또는 비밀번호가 일치하지 않습니다.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("서버 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -59,8 +69,8 @@ export default function AdminLoginPage() {
                         />
                     </div>
 
-                    <Button type="submit" className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white">
-                        로그인
+                    <Button type="submit" className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white" disabled={loading}>
+                        {loading ? "로그인 중..." : "로그인"}
                     </Button>
                 </form>
             </div>

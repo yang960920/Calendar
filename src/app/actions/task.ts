@@ -82,9 +82,10 @@ export async function createTask(data: {
                 description: data.content,
                 status: "TODO",
                 priority: "MEDIUM",
+                planned: data.planned,
                 projectId: targetProjectId,
                 assigneeId: data.assigneeId,
-                dueDate: new Date(data.date), // 시작일 역할로 사용
+                dueDate: new Date(data.date),
                 endDate: new Date(data.endDate),
                 subTasks: data.subTasks && data.subTasks.length > 0
                     ? { create: data.subTasks.map(st => ({ title: st.title })) }

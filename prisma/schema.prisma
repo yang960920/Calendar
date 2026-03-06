@@ -66,6 +66,7 @@ model Task {
   description String?
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
+  planned     Float        @default(1)   // 생성자가 부여하는 업무량 (목표량)
   projectId   String
   project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assigneeId  String?

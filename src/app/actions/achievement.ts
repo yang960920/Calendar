@@ -15,13 +15,6 @@ export async function getAchievementData(departmentFilter: string = "all") {
             ? { assignee: { department: { name: departmentFilter } } }
             : {};
 
-        // Task 모델의 priority를 planned 수치로 변환
-        const priorityToPlanned = (priority: string) => {
-            if (priority === "HIGH") return 3;
-            if (priority === "MEDIUM") return 2;
-            return 1;
-        };
-
         // 모든 Task (필터 적용)
         const tasks = await prisma.task.findMany({
             where: {
@@ -58,7 +51,7 @@ export async function getAchievementData(departmentFilter: string = "all") {
         const deptMap: Record<string, { total: number; done: number; contribution: number; totalPlanned: number }> = {};
         tasks.forEach(t => {
             const deptName = t.assignee?.department?.name || "미지정";
-            const planned = priorityToPlanned(t.priority);
+            const planned = t.planned || 1;
             if (!deptMap[deptName]) deptMap[deptName] = { total: 0, done: 0, contribution: 0, totalPlanned: 0 };
             deptMap[deptName].total += 1;
             deptMap[deptName].totalPlanned += planned;
@@ -83,7 +76,7 @@ export async function getAchievementData(departmentFilter: string = "all") {
         const memberMap: Record<string, { total: number; done: number; contribution: number; totalPlanned: number }> = {};
         tasks.forEach(t => {
             const name = t.assignee?.name || "미할당";
-            const planned = priorityToPlanned(t.priority);
+            const planned = t.planned || 1;
             if (!memberMap[name]) memberMap[name] = { total: 0, done: 0, contribution: 0, totalPlanned: 0 };
             memberMap[name].total += 1;
             memberMap[name].totalPlanned += planned;

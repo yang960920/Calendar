@@ -129,6 +129,22 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false }: E
                             <DialogTitle>{readonly ? "업무 기록열람 및 결과보고" : "업무 기록(Task) 수정"}</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                            {/* 담당자 표시 */}
+                            {task?.assigneeNames && task.assigneeNames.length > 0 && (
+                                <div className="grid gap-2">
+                                    <Label>담당자</Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {task.assigneeNames.map((name, i) => (
+                                            <span
+                                                key={i}
+                                                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium"
+                                            >
+                                                👤 {name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <div className="grid gap-2">
                                 <Label htmlFor="edit-date">날짜 (YYYY-MM-DD)</Label>
                                 <Input

@@ -26,6 +26,8 @@ export interface Task {
     projectId?: string; // 소속 프로젝트 ID (없으면 개인 업무 일지)
     assigneeId?: string; // 기존 1:N 호환 유지
     assigneeIds?: string[]; // 복수 담당자 (다대다)
+    assigneeName?: string; // 담당자 이름 (표시용)
+    assigneeNames?: string[]; // 복수 담당자 이름 (표시용)
     endDate?: string; // "YYYY-MM-DD"
     completedAt?: string; // ISO DateTime string
     subTasks?: SubTask[];

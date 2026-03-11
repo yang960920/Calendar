@@ -59,6 +59,12 @@ export async function getInitialData(userId: string) {
             projectId: t.projectId,
             assigneeId: t.assigneeId || undefined,
             assigneeIds: t.assignees ? t.assignees.map((u: any) => u.id) : (t.assigneeId ? [t.assigneeId] : []),
+            assigneeName: t.assignees && t.assignees.length > 0
+                ? (t.assignees[0] as any).name
+                : undefined,
+            assigneeNames: t.assignees
+                ? t.assignees.map((u: any) => u.name)
+                : [],
             completedAt: t.completedAt ? t.completedAt.toISOString() : undefined,
             subTasks: t.subTasks.map(st => ({
                 id: st.id,

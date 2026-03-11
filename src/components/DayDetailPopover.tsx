@@ -168,6 +168,11 @@ export const DayDetailPopover = ({
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className="text-[10px] text-muted-foreground">{task.category}</span>
+                                                {task.assigneeNames && task.assigneeNames.length > 0 && (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        👤 {task.assigneeNames.join(', ')}
+                                                    </span>
+                                                )}
                                                 {task.subTasks && task.subTasks.length > 0 && (
                                                     <span className="text-[10px] text-muted-foreground">
                                                         📋 {task.subTasks.filter(st => st.isCompleted).length}/{task.subTasks.length}

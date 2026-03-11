@@ -47,8 +47,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false }: E
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("기획");
-    const [planned, setPlanned] = useState<string>("1");
-    const [done, setDone] = useState<string>("0");
+
     const [fileUrl, setFileUrl] = useState<string>("");
     const [showSubTaskPanel, setShowSubTaskPanel] = useState(false);
 
@@ -63,8 +62,6 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false }: E
             setTitle(task.title);
             setContent(task.content || "");
             setCategory(task.category);
-            setPlanned(String(task.planned));
-            setDone(String(task.done));
             setFileUrl(task.fileUrl || "");
             setShowSubTaskPanel(false);
         }
@@ -83,14 +80,6 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false }: E
         e.preventDefault();
         if (!task) return;
 
-        const plannedNum = parseFloat(planned);
-        const doneNum = parseFloat(done);
-
-        if (isNaN(plannedNum) || isNaN(doneNum) || plannedNum <= 0) {
-            alert("계획량은 0보다 커야 하며, 숫자로 입력해주세요.");
-            return;
-        }
-
         if (readonly) {
             updateTask(task.id, {
                 content,
@@ -103,8 +92,6 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false }: E
                 content,
                 fileUrl,
                 category,
-                planned: plannedNum,
-                done: doneNum,
                 weight: 1,
             });
         }
@@ -209,34 +196,7 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false }: E
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-planned">계획량 (목표)</Label>
-                                    <Input
-                                        id="edit-planned"
-                                        type="number"
-                                        step="0.1"
-                                        min="0.1"
-                                        value={planned}
-                                        onChange={(e) => setPlanned(e.target.value)}
-                                        required
-                                        disabled={readonly}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-done">실행량 (달성)</Label>
-                                    <Input
-                                        id="edit-done"
-                                        type="number"
-                                        step="0.1"
-                                        min="0"
-                                        value={done}
-                                        onChange={(e) => setDone(e.target.value)}
-                                        required
-                                        disabled={readonly}
-                                    />
-                                </div>
-                            </div>
+
 
                             {/* 하위업무 확인하기 버튼 */}
                             {task && (

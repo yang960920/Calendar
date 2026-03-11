@@ -55,7 +55,7 @@ export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: Pro
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("기획");
-    const [planned, setPlanned] = useState<string>("1");
+
     // 초기 생성 시 프로젝트 업무는 담당자가 완료하기 전까지 done=0
     const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
 
@@ -70,13 +70,6 @@ export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: Pro
 
         if (assigneeIds.length === 0) {
             alert("업무를 수행할 담당자를 최소 1명 선택해주세요.");
-            return;
-        }
-
-        const plannedNum = parseFloat(planned);
-
-        if (isNaN(plannedNum) || plannedNum <= 0) {
-            alert("계획량은 0보다 커야 하며, 숫자로 입력해주세요.");
             return;
         }
 
@@ -97,7 +90,7 @@ export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: Pro
                 title,
                 content,
                 category,
-                planned: plannedNum,
+                planned: 1,
                 projectId,
                 assigneeIds,
             });
@@ -111,7 +104,7 @@ export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: Pro
                     title,
                     content,
                     category,
-                    planned: plannedNum,
+                    planned: 1,
                     done: 0,
                     weight: 1,
                     projectId,
@@ -194,14 +187,14 @@ export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: Pro
                                     <label
                                         key={pId}
                                         className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${isChecked
-                                                ? "bg-primary/10 border border-primary/30"
-                                                : "hover:bg-muted/50"
+                                            ? "bg-primary/10 border border-primary/30"
+                                            : "hover:bg-muted/50"
                                             }`}
                                     >
                                         <div
                                             className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${isChecked
-                                                    ? "bg-primary border-primary text-primary-foreground"
-                                                    : "border-muted-foreground/30"
+                                                ? "bg-primary border-primary text-primary-foreground"
+                                                : "border-muted-foreground/30"
                                                 }`}
                                         >
                                             {isChecked && <Check className="h-3 w-3" />}
@@ -271,18 +264,7 @@ export const ProjectTaskForm = ({ projectId, participants, projectEndDate }: Pro
                         </Select>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="planned">목표량</Label>
-                        <Input
-                            id="planned"
-                            type="number"
-                            step="0.1"
-                            min="0.1"
-                            value={planned}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlanned(e.target.value)}
-                            required
-                        />
-                    </div>
+
 
                     <Button type="submit" className="mt-4">
                         팀원에게 업무 할당하기

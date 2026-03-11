@@ -43,8 +43,29 @@
       <ul>
         <li>프로젝트 생성 및 참여자 초대</li>
         <li>Creator / Participant 역할 기반 접근 제어</li>
-        <li>프로젝트별 업무 할당 및 관리</li>
+        <li><b>복수 담당자</b> 업무 할당 (M:N 관계)</li>
         <li>첨부파일 업로드 지원 (Vercel Blob)</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>📅 캘린더 최적화</h3>
+      <ul>
+        <li>날짜별 <b>최대 3개</b> 업무 표시 + "+N건 더보기" 뱃지</li>
+        <li><b>우선순위 자동 정렬</b> (지연→마감→미완료→완료)</li>
+        <li>날짜 셀 클릭 → <b>Popover</b>로 전체 업무 리스트</li>
+        <li>Popover 내 <b>빠른 완료 체크박스</b></li>
+        <li>다일(Multi-day) 업무 Gantt 바 지원</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>✅ 하위업무 (SubTask)</h3>
+      <ul>
+        <li>업무별 하위업무 CRUD (추가/수정/삭제)</li>
+        <li>상태 관리 (TODO → IN_PROGRESS → DONE)</li>
+        <li>하위업무 완료율에 따른 상위 Task <b>자동 상태 갱신</b></li>
+        <li>하위업무 담당자 지정 및 댓글 시스템</li>
       </ul>
     </td>
   </tr>
@@ -64,6 +85,17 @@
         <li>실시간 업무 추적 (진행률, 지연 현황)</li>
         <li>부서별 성과 비교 분석 차트</li>
         <li>활동 로그 감사 추적 (Audit Trail)</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <h3>📈 공헌도 자동 산출 시스템</h3>
+      <ul>
+        <li><b>프로젝트 업무에만</b> 자동 공헌도 산출 (개인 업무 제외)</li>
+        <li>산출 공식: <code>기간 기반 점수 × 복잡도(SubTask 수) × 기한 보너스 ÷ 담당자 수</code></li>
+        <li><b>소요율 상한선</b>: 설정 기간 대비 실제 소요 30% 미만 시 보너스 제한 (악용 방지)</li>
+        <li>관리자(Admin) 전용 — 부서장·직원에게 <b>비공개</b></li>
       </ul>
     </td>
   </tr>
@@ -147,7 +179,7 @@
 ```
 keeper-calendar/
 ├── 📂 prisma/
-│   └── schema.prisma          # DB 스키마 (User, Project, Task, ActivityLog 등)
+│   └── schema.prisma          # DB 스키마 (User, Project, Task, SubTask, ActivityLog 등)
 ├── 📂 scripts/
 │   └── seed.ts                # 초기 데이터 시딩 스크립트
 ├── 📂 src/
@@ -160,23 +192,28 @@ keeper-calendar/
 │   │   │   ├── login/         #    관리자 로그인
 │   │   │   ├── employees/     #    사원 관리
 │   │   │   ├── tracking/      #    실적 추적
-│   │   │   └── achievement/   #    성과 분석
+│   │   │   └── achievement/   #    성과 분석 (공헌도 포함)
 │   │   ├── 📂 actions/        # ⚡ Server Actions
-│   │   │   ├── task.ts        #    업무 CRUD + 활동 로그
+│   │   │   ├── task.ts        #    업무 CRUD + 공헌도 산출 + 활동 로그
+│   │   │   ├── achievement.ts #    성과 통계 (contributionScore 기반)
 │   │   │   ├── project.ts     #    프로젝트 생성
 │   │   │   ├── employee.ts    #    사원 관리 + 인증
 │   │   │   ├── tracking.ts    #    실적 데이터 조회
 │   │   │   └── init.ts        #    초기 데이터 로드
 │   │   └── 📂 api/            # API Routes
 │   ├── 📂 components/
-│   │   ├── CalendarGrid.tsx        # 캘린더 그리드
+│   │   ├── CalendarGrid.tsx        # 캘린더 그리드 (최대 3개 + 우선순위 정렬)
+│   │   ├── DayDetailPopover.tsx    # 날짜 상세 Popover (전체 업무 리스트)
 │   │   ├── HeatmapCalendar.tsx     # 연간 히트맵
 │   │   ├── MonthlyBarChart.tsx     # 월별 Bar 차트
 │   │   ├── MonthlyLineChart.tsx    # 월별 Line 차트
 │   │   ├── CategoryBarChart.tsx    # 카테고리별 차트
 │   │   ├── MonthlySummaryWidget.tsx# 월간 요약 위젯
 │   │   ├── TaskForm.tsx            # 업무 등록 폼
+│   │   ├── ProjectTaskForm.tsx     # 프로젝트 업무 할당 폼
 │   │   ├── EditTaskDialog.tsx      # 업무 수정 다이얼로그
+│   │   ├── SubTaskPanel.tsx        # 하위업무 관리 패널
+│   │   ├── SubTaskInput.tsx        # 하위업무 입력 컴포넌트
 │   │   ├── CreateProjectDialog.tsx # 프로젝트 생성 다이얼로그
 │   │   ├── Navigation.tsx          # 사이드바 네비게이션
 │   │   ├── AuthProvider.tsx        # 인증 Provider
@@ -188,7 +225,9 @@ keeper-calendar/
 │   │   ├── useAuthStore.ts    #    인증 상태 관리
 │   │   └── useAdminStore.ts   #    관리자 상태 관리
 │   ├── 📂 hooks/              # Custom React Hooks
-│   └── 📂 lib/                # 유틸리티 & Prisma Client
+│   └── 📂 lib/                # 유틸리티
+│       ├── prisma.ts          #    Prisma Client
+│       └── contribution.ts    #    공헌도 자동 산출 유틸리티
 └── package.json
 ```
 
@@ -200,11 +239,13 @@ keeper-calendar/
 erDiagram
     Department ||--o{ User : contains
     User ||--o{ Task : assigned
+    User }o--o{ Task : multi_assigned
     User ||--o{ Project : creates
     User }o--o{ Project : participates
     User ||--o{ ActivityLog : performs
     Project ||--o{ Task : has
     Project ||--o{ ActivityLog : logs
+    Task ||--o{ SubTask : contains
     Task ||--o{ Attachment : has
     Task ||--o{ ActivityLog : logs
 
@@ -234,10 +275,23 @@ erDiagram
         string description
         enum status
         enum priority
+        float planned
+        float contributionScore
         string projectId FK
         string assigneeId FK
         datetime dueDate
         datetime endDate
+        datetime completedAt
+    }
+    SubTask {
+        string id PK
+        string title
+        string description
+        boolean isCompleted
+        enum status
+        string taskId FK
+        string assigneeId FK
+        datetime dueDate
         datetime completedAt
     }
     Attachment {

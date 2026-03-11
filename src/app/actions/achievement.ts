@@ -51,13 +51,12 @@ export async function getAchievementData(departmentFilter: string = "all") {
         const deptMap: Record<string, { total: number; done: number; contribution: number; totalPlanned: number }> = {};
         tasks.forEach(t => {
             const deptName = t.assignee?.department?.name || "미지정";
-            const planned = t.planned || 1;
             if (!deptMap[deptName]) deptMap[deptName] = { total: 0, done: 0, contribution: 0, totalPlanned: 0 };
             deptMap[deptName].total += 1;
-            deptMap[deptName].totalPlanned += planned;
+            deptMap[deptName].totalPlanned += (t.planned || 1);
             if (t.status === "DONE") {
                 deptMap[deptName].done += 1;
-                deptMap[deptName].contribution += planned;
+                deptMap[deptName].contribution += (t.contributionScore || 0);
             }
         });
 
@@ -76,13 +75,12 @@ export async function getAchievementData(departmentFilter: string = "all") {
         const memberMap: Record<string, { total: number; done: number; contribution: number; totalPlanned: number }> = {};
         tasks.forEach(t => {
             const name = t.assignee?.name || "미할당";
-            const planned = t.planned || 1;
             if (!memberMap[name]) memberMap[name] = { total: 0, done: 0, contribution: 0, totalPlanned: 0 };
             memberMap[name].total += 1;
-            memberMap[name].totalPlanned += planned;
+            memberMap[name].totalPlanned += (t.planned || 1);
             if (t.status === "DONE") {
                 memberMap[name].done += 1;
-                memberMap[name].contribution += planned;
+                memberMap[name].contribution += (t.contributionScore || 0);
             }
         });
 

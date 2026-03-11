@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { calculateContribution } from "@/lib/contribution";
 
 /**
  * 활동 로그를 안전하게 기록합니다 (실패해도 메인 로직에 영향 없음)
@@ -126,11 +127,32 @@ export async function createTask(data: {
 
 export async function updateTaskStatus(taskId: string, data: { done: number, isCompleted: boolean }) {
     try {
+        // 완료 시 공헌도 자동 산출 (개인 업무 제외)
+        let contributionScore: number | null = null;
+        if (data.isCompleted) {
+            const taskData = await prisma.task.findUnique({
+                where: { id: taskId },
+                include: { subTasks: true, assignees: true, project: true },
+            });
+            // 개인 업무(월별 일지)는 공헌도 산출 제외
+            const isPersonalTask = taskData?.project?.name === "개인 업무";
+            if (taskData && !isPersonalTask) {
+                contributionScore = calculateContribution({
+                    startDate: taskData.dueDate || taskData.createdAt,
+                    endDate: taskData.endDate || null,
+                    completedAt: new Date(),
+                    subTaskCount: taskData.subTasks.length,
+                    assigneeCount: Math.max(taskData.assignees.length, 1),
+                });
+            }
+        }
+
         const updated = await prisma.task.update({
             where: { id: taskId },
             data: {
                 status: data.isCompleted ? "DONE" : "IN_PROGRESS",
                 completedAt: data.isCompleted ? new Date() : null,
+                contributionScore: data.isCompleted ? contributionScore : null,
             },
             include: { assignees: true },
         });
@@ -216,17 +238,34 @@ async function recalcTaskStatus(taskId: string) {
 
     let newStatus: "TODO" | "IN_PROGRESS" | "DONE" = "TODO";
     let completedAt: Date | null = null;
+    let contributionScore: number | null = null;
 
     if (completedCount === totalCount) {
         newStatus = "DONE";
         completedAt = new Date();
+
+        // 완료 시 공헌도 자동 산출 (개인 업무 제외)
+        const taskData = await prisma.task.findUnique({
+            where: { id: taskId },
+            include: { assignees: true, project: true },
+        });
+        const isPersonalTask = taskData?.project?.name === "개인 업무";
+        if (taskData && !isPersonalTask) {
+            contributionScore = calculateContribution({
+                startDate: taskData.dueDate || taskData.createdAt,
+                endDate: taskData.endDate || null,
+                completedAt: new Date(),
+                subTaskCount: totalCount,
+                assigneeCount: Math.max(taskData.assignees.length, 1),
+            });
+        }
     } else if (completedCount > 0) {
         newStatus = "IN_PROGRESS";
     }
 
     await prisma.task.update({
         where: { id: taskId },
-        data: { status: newStatus, completedAt },
+        data: { status: newStatus, completedAt, contributionScore },
     });
 }
 

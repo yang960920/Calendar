@@ -41,8 +41,7 @@ export const TaskForm = () => {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("기획");
-    const [planned, setPlanned] = useState<string>("1");
-    const [done, setDone] = useState<string>("0");
+
     const [fileUrl, setFileUrl] = useState<string>("");
     const [subTasks, setSubTasks] = useState<{ title: string }[]>([]);
 
@@ -58,14 +57,6 @@ export const TaskForm = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        const plannedNum = parseFloat(planned);
-        const doneNum = parseFloat(done);
-
-        if (isNaN(plannedNum) || isNaN(doneNum) || plannedNum <= 0) {
-            alert("계획량은 0보다 커야 하며, 숫자로 입력해주세요.");
-            return;
-        }
 
         try {
             // DB 연동 (Server Action) - 개인 업무의 경우 assigneeId가 필수이므로 현재 사용자 ID 연동 필요
@@ -85,7 +76,7 @@ export const TaskForm = () => {
                 title,
                 content,
                 category,
-                planned: plannedNum,
+                planned: 1,
                 assigneeId: reqAssigneeId,
                 subTasks: subTasks.length > 0 ? subTasks : undefined,
             });
@@ -100,9 +91,9 @@ export const TaskForm = () => {
                     content,
                     fileUrl,
                     category,
-                    planned: plannedNum,
-                    done: doneNum,
-                    weight: 1, // Default
+                    planned: 1,
+                    done: 0,
+                    weight: 1,
                     projectId: result.data.projectId,
                     assigneeId: result.data.assigneeId || undefined,
                     subTasks: (result.data as any).subTasks?.map((st: any) => ({
@@ -117,7 +108,6 @@ export const TaskForm = () => {
                 setTitle("");
                 setContent("");
                 setFileUrl("");
-                setDone("0");
                 setSubTasks([]);
                 setOpen(false);
             } else {
@@ -219,32 +209,7 @@ export const TaskForm = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="planned">계획량 (목표)</Label>
-                            <Input
-                                id="planned"
-                                type="number"
-                                step="0.1"
-                                min="0.1"
-                                value={planned}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlanned(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="done">실행량 (달성)</Label>
-                            <Input
-                                id="done"
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                value={done}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDone(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
+
 
                     {/* 하위 업무 입력 (개인 업무) */}
                     <SubTaskInput

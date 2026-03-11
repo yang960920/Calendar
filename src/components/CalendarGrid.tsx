@@ -13,6 +13,7 @@ import {
 } from "date-fns";
 import { Task, useTaskStore } from "@/store/useTaskStore";
 import { updateTaskStatus } from "@/app/actions/task";
+import { DayDetailPopover } from "@/components/DayDetailPopover";
 
 interface CalendarGridProps {
     year: string;
@@ -33,6 +34,28 @@ const categoryColors: Record<string, string> = {
     가족: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 border-purple-200 dark:border-purple-800",
     자기계발: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800",
 };
+
+const MAX_VISIBLE_TASKS = 3;
+
+/** 캘린더에 표시되는 우선순위 정렬 */
+function sortByPriority(tasks: Task[]): Task[] {
+    const today = startOfDay(new Date());
+
+    return [...tasks].sort((a, b) => {
+        const getPriority = (task: Task): number => {
+            const isCompleted = task.done >= task.planned;
+            const taskEnd = startOfDay(new Date(task.endDate || task.date));
+            const isOverdue = !isCompleted && isAfter(today, taskEnd);
+            const isDueToday = !isCompleted && format(today, "yyyy-MM-dd") === format(taskEnd, "yyyy-MM-dd");
+
+            if (isOverdue) return 0; // 1순위: 기한 지연
+            if (isDueToday) return 1; // 2순위: 오늘 마감
+            if (!isCompleted) return 2; // 3순위: 미완료
+            return 3; // 4순위: 완료
+        };
+        return getPriority(a) - getPriority(b);
+    });
+}
 
 export const CalendarGrid = ({ year, month, tasks, onTaskClick, userRole, currentUserId, projectCreatorId }: CalendarGridProps) => {
     const updateTask = useTaskStore((state) => state.updateTask);
@@ -131,125 +154,104 @@ export const CalendarGrid = ({ year, month, tasks, onTaskClick, userRole, curren
                 {days.map((day, idx) => {
                     const dateKey = format(day, "yyyy-MM-dd");
                     const dayTasks = tasksByDate[dateKey] || [];
+                    const sortedTasks = sortByPriority(dayTasks);
+                    const visibleTasks = sortedTasks.slice(0, MAX_VISIBLE_TASKS);
+                    const hiddenCount = sortedTasks.length - MAX_VISIBLE_TASKS;
                     const isCurrentMonth = isSameMonth(day, monthStart);
                     const isTodayLocal = isToday(day);
 
                     return (
-                        <div
+                        <DayDetailPopover
                             key={day.toString()}
-                            className={`border-b border-r p-2 flex flex-col gap-1 transition-colors ${!isCurrentMonth ? "bg-muted/20 opacity-50" : ""
-                                } ${isTodayLocal ? "bg-primary/5" : ""} ${idx % 7 === 6 ? "border-r-0" : "" // 일요일 우측 보더 제거 여부 (옵션)
-                                }`}
+                            dateKey={dateKey}
+                            tasks={sortedTasks}
+                            onTaskClick={onTaskClick}
+                            userRole={userRole}
+                            currentUserId={currentUserId}
+                            projectCreatorId={projectCreatorId}
                         >
-                            {/* 날짜 헤더 */}
-                            <div className="flex items-center justify-between mb-1">
-                                <span
-                                    className={`text-sm font-medium ${isTodayLocal
-                                        ? "bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center"
-                                        : "text-muted-foreground"
-                                        }`}
-                                >
-                                    {format(day, "d")}
-                                </span>
-                            </div>
+                            <div
+                                className={`border-b border-r p-2 flex flex-col gap-1 transition-colors cursor-pointer hover:bg-muted/30 ${!isCurrentMonth ? "bg-muted/20 opacity-50" : ""
+                                    } ${isTodayLocal ? "bg-primary/5" : ""} ${idx % 7 === 6 ? "border-r-0" : ""
+                                    }`}
+                            >
+                                {/* 날짜 헤더 */}
+                                <div className="flex items-center justify-between mb-1">
+                                    <span
+                                        className={`text-sm font-medium ${isTodayLocal
+                                            ? "bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center"
+                                            : "text-muted-foreground"
+                                            }`}
+                                    >
+                                        {format(day, "d")}
+                                    </span>
+                                    {/* 업무 개수 인디케이터 */}
+                                    {dayTasks.length > 0 && (
+                                        <span className="text-[10px] text-muted-foreground font-medium">
+                                            {dayTasks.length}건
+                                        </span>
+                                    )}
+                                </div>
 
-                            {/* Task 목록 */}
-                            <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[140px] hide-scrollbar">
-                                {dayTasks.map((task) => {
-                                    const isCompleted = task.done >= task.planned;
+                                {/* Task 목록 (최대 3개) */}
+                                <div className="flex flex-col gap-1 overflow-hidden">
+                                    {visibleTasks.map((task) => {
+                                        const isCompleted = task.done >= task.planned;
 
-                                    // Gantt & Status calculations
-                                    const isStart = dateKey === task.date;
-                                    const isEnd = dateKey === (task.endDate || task.date);
+                                        // Gantt & Status calculations
+                                        const isStart = dateKey === task.date;
+                                        const isEnd = dateKey === (task.endDate || task.date);
 
-                                    const today = startOfDay(new Date());
-                                    const taskEnd = startOfDay(new Date(task.endDate || task.date));
-                                    const isOverdue = !isCompleted && isAfter(today, taskEnd);
-                                    const isLateCompletion = isCompleted && task.completedAt && isAfter(startOfDay(new Date(task.completedAt)), taskEnd);
+                                        const today = startOfDay(new Date());
+                                        const taskEnd = startOfDay(new Date(task.endDate || task.date));
+                                        const isOverdue = !isCompleted && isAfter(today, taskEnd);
 
-                                    let colorClass = categoryColors[task.category] || "bg-muted text-foreground border-border";
-                                    if (isOverdue) {
-                                        colorClass = "bg-red-100/80 text-red-900 border-red-500 border-[1.5px] dark:bg-red-900/40 dark:text-red-100";
-                                    }
+                                        let colorClass = categoryColors[task.category] || "bg-muted text-foreground border-border";
+                                        if (isOverdue) {
+                                            colorClass = "bg-red-100/80 text-red-900 border-red-500 border-[1.5px] dark:bg-red-900/40 dark:text-red-100";
+                                        }
 
-                                    const ganttClasses =
-                                        isStart && isEnd ? "rounded-md mx-1" :
-                                            isStart && !isEnd ? "rounded-l-md rounded-r-none ml-1 -mr-2 pr-2 border-r-0 z-10" :
-                                                !isStart && isEnd ? "rounded-r-md rounded-l-none mr-1 -ml-2 pl-2 border-l-0 z-10" :
-                                                    "rounded-none -mx-2 px-2 border-l-0 border-r-0 z-0";
+                                        const ganttClasses =
+                                            isStart && isEnd ? "rounded-md mx-1" :
+                                                isStart && !isEnd ? "rounded-l-md rounded-r-none ml-1 -mr-2 pr-2 border-r-0 z-10" :
+                                                    !isStart && isEnd ? "rounded-r-md rounded-l-none mr-1 -ml-2 pl-2 border-l-0 z-10" :
+                                                        "rounded-none -mx-2 px-2 border-l-0 border-r-0 z-0";
 
-                                    return (
-                                        <div
-                                            key={task.id}
-                                            onClick={() => onTaskClick(task)}
-                                            className={`
-                                                flex items-start gap-2 p-1.5 h-[48px] overflow-hidden border text-xs cursor-pointer hover:opacity-80 transition-opacity
-                                                ${colorClass}
-                                                ${isCompleted ? "opacity-60 grayscale-[50%]" : ""}
-                                                ${ganttClasses}
-                                            `}
-                                        >
-                                            {isStart ? (
-                                                <>
-                                                    {/* 체크박스 커스텀 */}
-                                                    <div
-                                                        onClick={(e) => handleToggleTask(e, task)}
-                                                        className={`
-                                                            shrink-0 w-3.5 h-3.5 mt-0.5 rounded-[3px] border flex items-center justify-center transition-colors
-                                                            ${isCompleted ? "bg-foreground text-background border-foreground" : "bg-background border-muted-foreground"}
-                                                        `}
-                                                    >
-                                                        {isCompleted && (
-                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                                            </svg>
-                                                        )}
-                                                    </div>
+                                        return (
+                                            <div
+                                                key={task.id}
+                                                className={`
+                                                    flex items-center gap-1.5 p-1 h-[24px] overflow-hidden border text-[11px] transition-opacity pointer-events-none
+                                                    ${colorClass}
+                                                    ${isCompleted ? "opacity-50 grayscale-[50%]" : ""}
+                                                    ${ganttClasses}
+                                                `}
+                                            >
+                                                {isStart ? (
+                                                    <>
+                                                        {/* 상태 dot */}
+                                                        <div className={`shrink-0 w-1.5 h-1.5 rounded-full ${isCompleted ? "bg-green-500" : isOverdue ? "bg-red-500" : "bg-blue-400"
+                                                            }`} />
+                                                        <span className={`font-medium truncate ${isCompleted ? 'line-through' : ''}`}>
+                                                            {task.title}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <div className="opacity-0 w-full h-full pointer-events-none select-none">&nbsp;</div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
 
-                                                    {/* Task 텍스트 & 뱃지 */}
-                                                    <div className="flex flex-col min-w-0 flex-1 -mt-0.5">
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="font-semibold shrink-0 text-[10px] opacity-70">
-                                                                {task.category}
-                                                            </span>
-                                                            <span className={`font-medium truncate ${isCompleted ? 'line-through opacity-70' : ''}`}>
-                                                                {task.title}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                                            {isOverdue && <span className="text-[9px] bg-red-500/20 text-red-600 dark:text-red-400 px-1 rounded font-bold animate-pulse inline-flex items-center">🚨 지연됨</span>}
-                                                            {isLateCompletion && <span className="text-[9px] bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1 rounded font-bold inline-flex items-center">⚠️ 지연완료</span>}
-                                                            {task.assigneeIds && task.assigneeIds.length > 0
-                                                                ? task.assigneeIds.map((aId, idx) => (
-                                                                    <span key={idx} className="text-[9px] bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 px-1 rounded font-medium truncate max-w-[60px]">👤 {aId}</span>
-                                                                ))
-                                                                : task.assigneeId && <span className="text-[9px] bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 px-1 rounded font-medium truncate max-w-[60px]">👤 {task.assigneeId}</span>
-                                                            }
-                                                        </div>
-                                                        {/* 미니 프로그레스 바 (하위 업무가 있는 경우) */}
-                                                        {task.subTasks && task.subTasks.length > 0 && (() => {
-                                                            const completed = task.subTasks!.filter(st => st.isCompleted).length;
-                                                            const total = task.subTasks!.length;
-                                                            const pct = Math.round((completed / total) * 100);
-                                                            return (
-                                                                <div className="w-full mt-0.5 flex items-center gap-1">
-                                                                    <div className="flex-1 h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-                                                                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#22c55e' : '#3b82f6' }} />
-                                                                    </div>
-                                                                    <span className="text-[8px] opacity-60">{completed}/{total}</span>
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="opacity-0 w-full h-full pointer-events-none select-none">&nbsp;</div>
-                                            )}
+                                    {/* +N개 더보기 뱃지 */}
+                                    {hiddenCount > 0 && (
+                                        <div className="text-[10px] text-muted-foreground font-medium text-center py-0.5 bg-muted/40 rounded-md mx-1">
+                                            +{hiddenCount}건 더보기
                                         </div>
-                                    );
-                                })}
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        </DayDetailPopover>
                     );
                 })}
             </div>

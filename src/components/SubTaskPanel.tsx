@@ -9,7 +9,6 @@ import { SubTask } from "@/store/useTaskStore";
 import { SubTaskFormPanel } from "@/components/SubTaskFormPanel";
 import { useAuthStore } from "@/store/useAuthStore";
 import { addSubTaskComment, getSubTaskComments, deleteSubTaskComment } from "@/app/actions/subtask-comment";
-import { updateSubTask } from "@/app/actions/task";
 
 interface SubTaskPanelProps {
     taskId: string;
@@ -222,28 +221,7 @@ export function SubTaskPanel({
         return result;
     }, [subTasks, searchTerm, filter, user]);
 
-    // Phase 3: 상태 토글 (3단계 순환: TODO → IN_PROGRESS → DONE)
-    const handleStatusToggle = async (st: SubTask) => {
-        if (readonly) return;
-        const statusOrder: Array<'TODO' | 'IN_PROGRESS' | 'DONE'> = ['TODO', 'IN_PROGRESS', 'DONE'];
-        const currentIdx = statusOrder.indexOf((st.status || 'TODO') as any);
-        const nextStatus = statusOrder[(currentIdx + 1) % 3];
 
-        // 상태가 DONE이면 isCompleted도 true, 아니면 false
-        const isCompleted = nextStatus === 'DONE';
-
-        try {
-            await updateSubTask(st.id, {} as any); // status update handled separately
-            // 낙관적 업데이트: onToggle 대신 onUpdate 호출
-            if (nextStatus === 'DONE' && !st.isCompleted) {
-                onToggle(st.id); // 체크박스 토글 (isCompleted + status 동기화)
-            } else if (nextStatus !== 'DONE' && st.isCompleted) {
-                onToggle(st.id); // 체크 해제
-            }
-        } catch (error) {
-            console.error("Failed to update sub-task status:", error);
-        }
-    };
 
     const handleAdd = (data: { title: string; description?: string; assigneeId?: string; dueDate?: string; endDate?: string }) => {
         // "none" 협업자 선택 시 미지정으로 처리
@@ -338,107 +316,9 @@ export function SubTaskPanel({
                 </div>
             )}
 
-            {/* 하위 업무 리스트 */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-                {filteredSubTasks.length === 0 && !showForm && (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <p className="text-sm">
-                            {searchTerm || filter !== "all"
-                                ? "검색/필터 조건에 맞는 하위 업무가 없습니다."
-                                : "하위 업무가 없습니다."
-                            }
-                        </p>
-                        {!readonly && !searchTerm && filter === "all" && (
-                            <p className="text-xs mt-1">아래 버튼으로 추가해보세요.</p>
-                        )}
-                    </div>
-                )}
-
-                {filteredSubTasks.map(st => (
-                    <div
-                        key={st.id}
-                        className={`group rounded-lg border p-3 transition-all ${st.isCompleted ? "bg-muted/40 opacity-70" : "bg-card hover:border-primary/30"
-                            }`}
-                    >
-                        <div className="flex items-start gap-2">
-                            {/* Phase 3: 상태 뱃지 (클릭 시 3단계 토글) */}
-                            <button
-                                onClick={() => !readonly && onToggle(st.id)}
-                                disabled={readonly}
-                                className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded border flex items-center justify-center transition-colors
-                                    ${st.isCompleted
-                                        ? "bg-primary border-primary text-primary-foreground"
-                                        : st.status === 'IN_PROGRESS'
-                                            ? "bg-blue-500 border-blue-500 text-white"
-                                            : "border-muted-foreground/30 hover:border-primary"}
-                                    ${readonly ? "cursor-default" : "cursor-pointer"}`}
-                            >
-                                {st.isCompleted && <Check className="h-3 w-3" />}
-                                {st.status === 'IN_PROGRESS' && !st.isCompleted && (
-                                    <div className="w-2 h-2 bg-white rounded-full" />
-                                )}
-                            </button>
-
-                            <div className="flex-1 min-w-0">
-                                {/* 제목 + 상태 뱃지 */}
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className={`text-sm font-medium ${st.isCompleted ? "line-through text-muted-foreground" : ""}`}>
-                                        {st.title}
-                                    </span>
-                                    <StatusBadge status={st.status || (st.isCompleted ? 'DONE' : 'TODO')} />
-                                </div>
-
-                                {/* 설명 */}
-                                {st.description && (
-                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{st.description}</p>
-                                )}
-
-                                {/* 메타 정보 */}
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    {st.assigneeId && (
-                                        <span className="inline-flex items-center gap-0.5 text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded font-medium">
-                                            <User className="h-2.5 w-2.5" />
-                                            {st.assigneeId}
-                                        </span>
-                                    )}
-                                    {st.dueDate && (
-                                        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                            <Calendar className="h-2.5 w-2.5" />
-                                            {st.dueDate}{st.endDate && st.endDate !== st.dueDate ? ` ~ ${st.endDate}` : ""}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Phase 4: 코멘트 섹션 */}
-                                <CommentSection subTaskId={st.id} />
-                            </div>
-
-                            {/* 수정/삭제 */}
-                            {!readonly && (
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingSubTask(st)}>
-                                        <Pencil className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 text-destructive"
-                                        onClick={() => {
-                                            if (confirm("이 하위 업무를 삭제하시겠습니까?")) {
-                                                onDelete(st.id);
-                                            }
-                                        }}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
-
-                {/* 수정 폼 */}
-                {editingSubTask && (
+            {/* 수정/생성 폼 (리스트와 토글 — 폼이 열리면 리스트 숨김) */}
+            {editingSubTask ? (
+                <div className="flex-1 overflow-y-auto px-4 py-3">
                     <SubTaskFormPanel
                         mode="edit"
                         projectParticipants={projectParticipants}
@@ -452,18 +332,117 @@ export function SubTaskPanel({
                         onSubmit={handleUpdate}
                         onCancel={() => setEditingSubTask(null)}
                     />
-                )}
-
-                {/* 생성 폼 */}
-                {showForm && !editingSubTask && (
+                </div>
+            ) : showForm ? (
+                <div className="flex-1 overflow-y-auto px-4 py-3">
                     <SubTaskFormPanel
                         mode="create"
                         projectParticipants={projectParticipants}
                         onSubmit={handleAdd}
                         onCancel={() => setShowForm(false)}
                     />
-                )}
-            </div>
+                </div>
+            ) : (
+                /* 하위 업무 리스트 */
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+                    {filteredSubTasks.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <p className="text-sm">
+                                {searchTerm || filter !== "all"
+                                    ? "검색/필터 조건에 맞는 하위 업무가 없습니다."
+                                    : "하위 업무가 없습니다."
+                                }
+                            </p>
+                            {!readonly && !searchTerm && filter === "all" && (
+                                <p className="text-xs mt-1">아래 버튼으로 추가해보세요.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {filteredSubTasks.map(st => (
+                        <div
+                            key={st.id}
+                            className={`group rounded-lg border p-3 transition-all ${st.isCompleted ? "bg-muted/40 opacity-70" : "bg-card hover:border-primary/30"
+                                }`}
+                        >
+                            <div className="flex items-start gap-2">
+                                {/* Phase 3: 상태 뱃지 (클릭 시 3단계 토글) */}
+                                <button
+                                    onClick={() => !readonly && onToggle(st.id)}
+                                    disabled={readonly}
+                                    className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded border flex items-center justify-center transition-colors
+                                        ${st.isCompleted
+                                            ? "bg-primary border-primary text-primary-foreground"
+                                            : st.status === 'IN_PROGRESS'
+                                                ? "bg-blue-500 border-blue-500 text-white"
+                                                : "border-muted-foreground/30 hover:border-primary"}
+                                        ${readonly ? "cursor-default" : "cursor-pointer"}`}
+                                >
+                                    {st.isCompleted && <Check className="h-3 w-3" />}
+                                    {st.status === 'IN_PROGRESS' && !st.isCompleted && (
+                                        <div className="w-2 h-2 bg-white rounded-full" />
+                                    )}
+                                </button>
+
+                                <div className="flex-1 min-w-0">
+                                    {/* 제목 + 상태 뱃지 */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={`text-sm font-medium ${st.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                                            {st.title}
+                                        </span>
+                                        <StatusBadge status={st.status || (st.isCompleted ? 'DONE' : 'TODO')} />
+                                    </div>
+
+                                    {/* 설명 */}
+                                    {st.description && (
+                                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{st.description}</p>
+                                    )}
+
+                                    {/* 메타 정보 */}
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                        {st.assigneeId && (
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded font-medium">
+                                                <User className="h-2.5 w-2.5" />
+                                                {st.assigneeName || st.assigneeId}
+                                            </span>
+                                        )}
+                                        {st.dueDate && (
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                                <Calendar className="h-2.5 w-2.5" />
+                                                {st.dueDate}{st.endDate && st.endDate !== st.dueDate ? ` ~ ${st.endDate}` : ""}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Phase 4: 코멘트 섹션 */}
+                                    <CommentSection subTaskId={st.id} />
+                                </div>
+
+                                {/* 수정/삭제 */}
+                                {!readonly && (
+                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingSubTask(st)}>
+                                            <Pencil className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-destructive"
+                                            onClick={() => {
+                                                if (confirm("이 하위 업무를 삭제하시겠습니까?")) {
+                                                    onDelete(st.id);
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* 추가 버튼 */}
             {!readonly && !showForm && !editingSubTask && (

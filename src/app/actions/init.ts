@@ -32,7 +32,10 @@ export async function getInitialData(userId: string) {
             include: {
                 project: true,
                 assignees: true,  // 복수 담당자 포함
-                subTasks: { orderBy: { createdAt: 'asc' } },
+                subTasks: {
+                    orderBy: { createdAt: 'asc' },
+                    include: { assignee: true },
+                },
             }
         });
 
@@ -74,6 +77,7 @@ export async function getInitialData(userId: string) {
                 status: (st as any).status || 'TODO',  // Phase 3
                 completedAt: st.completedAt ? st.completedAt.toISOString() : undefined,
                 assigneeId: st.assigneeId || undefined,
+                assigneeName: (st as any).assignee?.name || undefined,
                 dueDate: st.dueDate ? st.dueDate.toISOString().split('T')[0] : undefined,
                 endDate: st.endDate ? st.endDate.toISOString().split('T')[0] : undefined,
             })),

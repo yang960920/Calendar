@@ -9,6 +9,7 @@ export interface SubTask {
     status?: 'TODO' | 'IN_PROGRESS' | 'DONE';  // Phase 3: 3단계 상태
     completedAt?: string;
     assigneeId?: string;
+    assigneeName?: string; // 담당자 이름 (표시용)
     dueDate?: string;
     endDate?: string;
 }
@@ -80,11 +81,19 @@ export const useTaskStore = create<TaskState>()(
                         t.id === taskId
                             ? {
                                 ...t,
-                                subTasks: (t.subTasks || []).map((st) =>
-                                    st.id === subTaskId
-                                        ? { ...st, isCompleted: !st.isCompleted, completedAt: !st.isCompleted ? new Date().toISOString() : undefined }
-                                        : st
-                                ),
+                                subTasks: (t.subTasks || []).map((st) => {
+                                    if (st.id !== subTaskId) return st;
+                                    // 3단계 순환: TODO → IN_PROGRESS → DONE → TODO
+                                    const statusOrder: Array<'TODO' | 'IN_PROGRESS' | 'DONE'> = ['TODO', 'IN_PROGRESS', 'DONE'];
+                                    const currentIdx = statusOrder.indexOf((st.status || 'TODO') as any);
+                                    const nextStatus = statusOrder[(currentIdx + 1) % 3];
+                                    return {
+                                        ...st,
+                                        status: nextStatus,
+                                        isCompleted: nextStatus === 'DONE',
+                                        completedAt: nextStatus === 'DONE' ? new Date().toISOString() : undefined,
+                                    };
+                                }),
                             }
                             : t
                     ),

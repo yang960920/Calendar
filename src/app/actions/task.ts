@@ -343,13 +343,18 @@ export async function toggleSubTask(subTaskId: string) {
         const current = await prisma.subTask.findUnique({ where: { id: subTaskId } });
         if (!current) return { success: false, error: "하위 업무를 찾을 수 없습니다." };
 
-        const newCompleted = !current.isCompleted;
+        // 3단계 순환: TODO → IN_PROGRESS → DONE → TODO
+        const statusOrder: Array<'TODO' | 'IN_PROGRESS' | 'DONE'> = ['TODO', 'IN_PROGRESS', 'DONE'];
+        const currentIdx = statusOrder.indexOf(current.status as any);
+        const nextStatus = statusOrder[(currentIdx + 1) % 3];
+        const isCompleted = nextStatus === 'DONE';
+
         const subTask = await prisma.subTask.update({
             where: { id: subTaskId },
             data: {
-                isCompleted: newCompleted,
-                completedAt: newCompleted ? new Date() : null,
-                status: newCompleted ? "DONE" : "TODO",  // Phase 3: status 동기화
+                isCompleted,
+                completedAt: isCompleted ? new Date() : null,
+                status: nextStatus,
             },
         });
 

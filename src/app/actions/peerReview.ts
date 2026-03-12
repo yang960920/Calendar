@@ -13,19 +13,21 @@ export async function getPendingReviews(userId: string) {
         const fiveDaysAgo = new Date(now);
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
-        // 종료된 프로젝트 중 5일 이내 & 사용자가 참여자인 프로젝트
+        // 종료된 프로젝트 중 5일 이내 & 사용자가 참여자 또는 생성자인 프로젝트
         const projects = await prisma.project.findMany({
             where: {
                 endDate: {
                     gte: fiveDaysAgo,
                     lte: now,
                 },
-                participants: {
-                    some: { id: userId },
-                },
+                OR: [
+                    { participants: { some: { id: userId } } },
+                    { creatorId: userId },
+                ],
             },
             include: {
                 participants: true,
+                creator: true,  // 생성자 정보 포함
                 peerReviews: {
                     where: { reviewerId: userId },
                 },
@@ -34,21 +36,33 @@ export async function getPendingReviews(userId: string) {
 
         // 아직 평가하지 않은 동료가 있는 프로젝트만 필터
         const pendingProjects = projects.filter(p => {
-            const otherParticipants = p.participants.filter(u => u.id !== userId);
+            // participants + creator 합쳐서 중복 제거
+            const allMembers = [...p.participants];
+            if (p.creator && !allMembers.some(u => u.id === p.creator.id)) {
+                allMembers.push(p.creator);
+            }
+            const otherMembers = allMembers.filter(u => u.id !== userId);
             const reviewedIds = p.peerReviews.map(r => r.revieweeId);
-            return otherParticipants.some(u => !reviewedIds.includes(u.id));
-        }).map(p => ({
-            projectId: p.id,
-            projectName: p.name,
-            endDate: p.endDate.toISOString(),
-            participants: p.participants
-                .filter(u => u.id !== userId)
-                .map(u => ({
-                    id: u.id,
-                    name: u.name,
-                    reviewed: p.peerReviews.some(r => r.revieweeId === u.id),
-                })),
-        }));
+            return otherMembers.some(u => !reviewedIds.includes(u.id));
+        }).map(p => {
+            // participants + creator 합쳐서 중복 제거
+            const allMembers = [...p.participants];
+            if (p.creator && !allMembers.some(u => u.id === p.creator.id)) {
+                allMembers.push(p.creator);
+            }
+            return {
+                projectId: p.id,
+                projectName: p.name,
+                endDate: p.endDate.toISOString(),
+                participants: allMembers
+                    .filter(u => u.id !== userId)
+                    .map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        reviewed: p.peerReviews.some(r => r.revieweeId === u.id),
+                    })),
+            };
+        });
 
         return { success: true, data: pendingProjects };
     } catch (error) {

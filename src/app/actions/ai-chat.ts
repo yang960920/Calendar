@@ -98,39 +98,69 @@ function formatTasksForContext(tasks: TaskContext[]): string {
     return `=== 업무 데이터 (총 ${tasks.length}건, 오늘: ${today}) ===\n${lines.join("\n")}`;
 }
 
+async function callWithRetry(prompt: string, retries = 3): Promise<string> {
+    const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
+
+    for (const modelName of models) {
+        for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                return result.response.text();
+            } catch (error: any) {
+                const status = error?.status || error?.code;
+                console.error(`AI attempt ${attempt + 1}/${retries} (${modelName}) failed:`, status, error?.message?.substring(0, 100));
+
+                if (status === 429) {
+                    // Rate limit — wait and retry
+                    const waitMs = Math.min(3000 * Math.pow(2, attempt), 15000);
+                    console.log(`Rate limited. Waiting ${waitMs}ms...`);
+                    await new Promise(r => setTimeout(r, waitMs));
+                    continue;
+                }
+
+                // Non-retryable error for this model, try next model
+                break;
+            }
+        }
+    }
+
+    throw new Error("ALL_MODELS_FAILED");
+}
+
 export async function askAI(
     preset: PresetType,
     tasks: TaskContext[],
     customPrompt?: string
 ): Promise<{ success: boolean; message: string; error?: string }> {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        if (!process.env.GEMINI_API_KEY) {
+            return { success: false, message: "", error: "AI API 키가 설정되지 않았습니다." };
+        }
 
         const taskContext = formatTasksForContext(tasks);
         const userPrompt = buildPresetPrompt(preset, customPrompt);
-
         const fullPrompt = `${SYSTEM_PROMPT}\n\n${taskContext}\n\n---\n\n${userPrompt}`;
 
-        const result = await model.generateContent(fullPrompt);
-        const response = result.response;
-        const text = response.text();
+        const text = await callWithRetry(fullPrompt);
 
         return { success: true, message: text };
     } catch (error: any) {
-        console.error("AI 요청 실패:", error);
+        console.error("AI 최종 실패:", error?.message);
 
-        if (error?.status === 429) {
+        if (error?.message === "ALL_MODELS_FAILED") {
             return {
                 success: false,
                 message: "",
-                error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+                error: "AI 서비스가 일시적으로 사용량이 초과되었습니다. 1분 후 다시 시도해주세요.",
             };
         }
 
         return {
             success: false,
             message: "",
-            error: "AI 응답을 가져오는데 실패했습니다. 다시 시도해주세요.",
+            error: `AI 오류: ${error?.message || "알 수 없는 오류"}. 다시 시도해주세요.`,
         };
     }
 }
+

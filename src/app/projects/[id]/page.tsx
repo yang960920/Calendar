@@ -14,6 +14,7 @@ import { ProjectTaskForm } from "@/components/ProjectTaskForm";
 import { EditTaskDialog } from "@/components/EditTaskDialog";
 import { EditProjectDialog } from "@/components/EditProjectDialog";
 import { ManageParticipantsDialog } from "@/components/ManageParticipantsDialog";
+import { ProjectTaskListDialog } from "@/components/ProjectTaskListDialog";
 import {
     Select,
     SelectContent,
@@ -114,6 +115,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             <div className="flex items-center gap-2 mt-3">
                                 <EditProjectDialog project={project} userId={user.id} />
                                 <ManageParticipantsDialog project={project} userId={user.id} />
+                                <ProjectTaskListDialog projectId={projectId} />
                             </div>
                         )}
                     </div>

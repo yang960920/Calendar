@@ -15,6 +15,7 @@ import { EditTaskDialog } from "@/components/EditTaskDialog";
 import { EditProjectDialog } from "@/components/EditProjectDialog";
 import { ManageParticipantsDialog } from "@/components/ManageParticipantsDialog";
 import { ProjectTaskListDialog } from "@/components/ProjectTaskListDialog";
+import { AIChatAssistant } from "@/components/AIChatAssistant";
 import {
     Select,
     SelectContent,
@@ -195,6 +196,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     />
                 );
             })()}
+
+            {/* AI Chat Assistant */}
+            <AIChatAssistant projectId={projectId} />
         </div>
     );
 }

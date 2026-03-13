@@ -11,6 +11,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.19.2",
     "@uiw/react-heat-map": "^2.3.3",
     "@vercel/blob": "^2.3.0",

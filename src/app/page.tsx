@@ -8,6 +8,7 @@ import { CategoryBarChart } from "@/components/CategoryBarChart";
 import { TaskForm } from "@/components/TaskForm";
 import { MonthlyTaskList } from "@/components/MonthlyTaskList";
 import { MonthlySummaryWidget } from "@/components/MonthlySummaryWidget";
+import { AIChatAssistant } from "@/components/AIChatAssistant";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useStore } from "@/hooks/useStore";
 import {
@@ -85,6 +86,9 @@ export default function Home() {
           <MonthlyTaskList year={selectedYear} month={selectedMonth} />
         </section>
       </main>
+
+      {/* AI Chat Assistant */}
+      <AIChatAssistant />
 
       {/* Floating Action Button for Task Form */}
       <TaskForm />

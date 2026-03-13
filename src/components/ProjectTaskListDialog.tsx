@@ -173,18 +173,18 @@ export const ProjectTaskListDialog = ({ projectId }: ProjectTaskListDialogProps)
                 </div>
 
                 {/* 테이블 */}
-                <div className="flex-1 overflow-y-auto border rounded-lg">
-                    <table className="w-full text-sm">
+                <div className="flex-1 overflow-y-auto overflow-x-auto border rounded-lg">
+                    <table className="w-full text-sm table-fixed min-w-[800px]">
                         <thead className="bg-muted text-muted-foreground sticky top-0">
                             <tr>
-                                <th className="px-3 py-2.5 font-medium text-center w-10">#</th>
-                                <th className="px-3 py-2.5 font-medium w-8"></th>
-                                <th className="px-3 py-2.5 font-medium">제목</th>
-                                <th className="px-3 py-2.5 font-medium">담당자</th>
-                                <th className="px-3 py-2.5 font-medium whitespace-nowrap">시작일</th>
-                                <th className="px-3 py-2.5 font-medium whitespace-nowrap">마감기한</th>
-                                <th className="px-3 py-2.5 font-medium text-center">상태</th>
-                                <th className="px-3 py-2.5 font-medium text-center w-10"></th>
+                                <th className="px-3 py-2.5 font-medium text-center w-[50px]">#</th>
+                                <th className="px-1 py-2.5 font-medium w-[30px]"></th>
+                                <th className="px-3 py-2.5 font-medium text-left">제목</th>
+                                <th className="px-3 py-2.5 font-medium text-left w-[120px]">담당자</th>
+                                <th className="px-3 py-2.5 font-medium text-left w-[110px]">시작일</th>
+                                <th className="px-3 py-2.5 font-medium text-left w-[110px]">마감기한</th>
+                                <th className="px-3 py-2.5 font-medium text-center w-[90px]">상태</th>
+                                <th className="px-2 py-2.5 font-medium text-center w-[40px]"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -208,8 +208,8 @@ export const ProjectTaskListDialog = ({ projectId }: ProjectTaskListDialogProps)
                                                 className={`hover:bg-muted/50 transition-colors ${hasSubTasks ? "cursor-pointer" : ""} ${isExpanded ? "bg-muted/30" : ""}`}
                                                 onClick={() => hasSubTasks && toggleExpand(task.id)}
                                             >
-                                                <td className="px-3 py-2.5 text-center text-muted-foreground text-xs">{idx + 1}</td>
-                                                <td className="px-1 py-2.5 text-center">
+                                                <td className="px-3 py-2.5 text-center text-muted-foreground text-xs whitespace-nowrap">{idx + 1}</td>
+                                                <td className="px-1 py-2.5 text-center whitespace-nowrap">
                                                     {hasSubTasks && (
                                                         isExpanded
                                                             ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -217,14 +217,16 @@ export const ProjectTaskListDialog = ({ projectId }: ProjectTaskListDialogProps)
                                                     )}
                                                 </td>
                                                 <td className="px-3 py-2.5">
-                                                    <span className="font-medium">{task.title}</span>
-                                                    {hasSubTasks && (
-                                                        <span className="ml-1.5 text-[10px] text-muted-foreground">
-                                                            ({(task.subTasks || []).filter(st => st.isCompleted).length}/{(task.subTasks || []).length})
-                                                        </span>
-                                                    )}
+                                                    <div className="truncate">
+                                                        <span className="font-medium">{task.title}</span>
+                                                        {hasSubTasks && (
+                                                            <span className="ml-1.5 text-[10px] text-muted-foreground">
+                                                                ({(task.subTasks || []).filter(st => st.isCompleted).length}/{(task.subTasks || []).length})
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
-                                                <td className="px-3 py-2.5 text-xs">
+                                                <td className="px-3 py-2.5 text-xs whitespace-nowrap truncate">
                                                     {task.assigneeNames?.join(", ") || task.assigneeName || task.assigneeId || "-"}
                                                 </td>
                                                 <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
@@ -233,7 +235,7 @@ export const ProjectTaskListDialog = ({ projectId }: ProjectTaskListDialogProps)
                                                 <td className="px-3 py-2.5 text-xs whitespace-nowrap">
                                                     {task.endDate || "-"}
                                                 </td>
-                                                <td className="px-3 py-2.5 text-center">
+                                                <td className="px-3 py-2.5 text-center whitespace-nowrap">
                                                     <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${status.className}`}>
                                                         {status.label}
                                                     </span>

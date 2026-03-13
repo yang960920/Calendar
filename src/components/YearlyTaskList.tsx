@@ -4,8 +4,11 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTaskStore, Task } from "@/store/useTaskStore";
 import { useStore } from "@/hooks/useStore";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { EditTaskDialog } from "@/components/EditTaskDialog";
+
+const PAGE_SIZE = 10;
 
 interface YearlyTaskListProps {
     year: string;
@@ -20,6 +23,7 @@ export const YearlyTaskList = ({ year, month }: YearlyTaskListProps) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         setMounted(true);
@@ -45,7 +49,13 @@ export const YearlyTaskList = ({ year, month }: YearlyTaskListProps) => {
         }
 
         return result.sort((a, b) => (a.date > b.date ? 1 : -1)); // 날짜 오름차순
-    }, [tasks, year, searchTerm]);
+    }, [tasks, year, month, searchTerm]);
+
+    // 필터 변경 시 페이지 리셋
+    useEffect(() => { setPage(1); }, [year, month, searchTerm]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+    const paginatedTasks = filteredTasks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     const handleRowClick = (task: Task) => {
         setSelectedTask(task);
@@ -85,14 +95,14 @@ export const YearlyTaskList = ({ year, month }: YearlyTaskListProps) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y relative">
-                            {filteredTasks.length === 0 ? (
+                            {paginatedTasks.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                                         검색 결과 또는 등록된 업무 일지가 없습니다.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredTasks.map((task) => (
+                                paginatedTasks.map((task) => (
                                     <tr
                                         key={task.id}
                                         className="hover:bg-muted/50 transition-colors cursor-pointer group"
@@ -119,6 +129,57 @@ export const YearlyTaskList = ({ year, month }: YearlyTaskListProps) => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* 페이지네이션 */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t">
+                        <p className="text-xs text-muted-foreground">
+                            총 {filteredTasks.length}건 중 {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, filteredTasks.length)}건
+                        </p>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                disabled={page <= 1}
+                                onClick={() => setPage(p => p - 1)}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                                .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                                    acc.push(p);
+                                    return acc;
+                                }, [])
+                                .map((p, i) =>
+                                    typeof p === 'string' ? (
+                                        <span key={`ellipsis-${i}`} className="px-1 text-xs text-muted-foreground">…</span>
+                                    ) : (
+                                        <Button
+                                            key={p}
+                                            variant={page === p ? "default" : "ghost"}
+                                            size="icon"
+                                            className="h-8 w-8 text-xs"
+                                            onClick={() => setPage(p)}
+                                        >
+                                            {p}
+                                        </Button>
+                                    )
+                                )}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                disabled={page >= totalPages}
+                                onClick={() => setPage(p => p + 1)}
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* 수정 컴포넌트 마운트 */}

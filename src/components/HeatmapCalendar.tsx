@@ -7,28 +7,33 @@ import { useTaskStore } from "@/store/useTaskStore";
 import { useStore } from "@/hooks/useStore";
 import { getDailyStats } from "@/lib/statistics";
 
-const PANEL_COLORS_LIGHT = {
-    0: "#ebedf0",
-    1: "#9be9a8",
-    2: "#40c463",
-    3: "#30a14e",
-    4: "#216e39",
-};
-
-const PANEL_COLORS_DARK = {
-    0: "#161b22",
-    1: "#0e4429",
-    2: "#006d32",
-    3: "#26a641",
-    4: "#39d353",
+// 다중 팔레트 지원
+const COLOR_PALETTES: Record<string, { light: Record<number, string>; dark: Record<number, string> }> = {
+    green: {
+        light: { 0: "#ebedf0", 1: "#9be9a8", 2: "#40c463", 3: "#30a14e", 4: "#216e39" },
+        dark: { 0: "#161b22", 1: "#0e4429", 2: "#006d32", 3: "#26a641", 4: "#39d353" },
+    },
+    blue: {
+        light: { 0: "#ebedf0", 1: "#bfdbfe", 2: "#60a5fa", 3: "#2563eb", 4: "#1e3a8a" },
+        dark: { 0: "#161b22", 1: "#1e3a5f", 2: "#2563eb", 3: "#60a5fa", 4: "#93c5fd" },
+    },
+    purple: {
+        light: { 0: "#ebedf0", 1: "#ddd6fe", 2: "#a78bfa", 3: "#7c3aed", 4: "#4c1d95" },
+        dark: { 0: "#161b22", 1: "#3b0764", 2: "#7c3aed", 3: "#a78bfa", 4: "#c4b5fd" },
+    },
+    orange: {
+        light: { 0: "#ebedf0", 1: "#fed7aa", 2: "#fb923c", 3: "#ea580c", 4: "#7c2d12" },
+        dark: { 0: "#161b22", 1: "#7c2d12", 2: "#ea580c", 3: "#fb923c", 4: "#fdba74" },
+    },
 };
 
 interface HeatmapCalendarProps {
     year?: string;
     month?: string;
+    colorPalette?: string;
 }
 
-export const HeatmapCalendar = ({ year, month }: HeatmapCalendarProps) => {
+export const HeatmapCalendar = ({ year, month, colorPalette = "green" }: HeatmapCalendarProps) => {
     const { resolvedTheme } = useTheme();
     const tasks = useStore(useTaskStore, (state) => state.tasks) || [];
     const [mounted, setMounted] = useState(false);
@@ -37,8 +42,8 @@ export const HeatmapCalendar = ({ year, month }: HeatmapCalendarProps) => {
         setMounted(true);
     }, []);
 
-    const panelColors =
-        resolvedTheme === "dark" ? PANEL_COLORS_DARK : PANEL_COLORS_LIGHT;
+    const palette = COLOR_PALETTES[colorPalette] || COLOR_PALETTES.green;
+    const panelColors = resolvedTheme === "dark" ? palette.dark : palette.light;
 
     const heatmapData = useMemo(() => {
         const stats = getDailyStats(tasks);

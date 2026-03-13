@@ -28,6 +28,7 @@ model User {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
   resumeUrl    String?     // Vercel Blob 이력서/포트폴리오 다운로드 링크
+  profileImageUrl String?  // Vercel Blob 프로필 이미지 URL
   tasks               Task[]      @relation("TaskAssignee")
   assignedTasks       Task[]      @relation("TaskAssignees")  // 다대다 (복수 담당자)
   projects            Project[]   @relation("ProjectCreator")
@@ -35,8 +36,9 @@ model User {
   assignedSubTasks    SubTask[]   @relation("SubTaskAssignee")
   subTaskComments     SubTaskComment[]
   activityLogs        ActivityLog[]
-  givenReviews        PeerReview[] @relation("PeerReviewer")   // 내가 한 평가
-  receivedReviews     PeerReview[] @relation("PeerReviewee")   // 내가 받은 평가
+  givenReviews        PeerReview[] @relation("PeerReviewer")
+  receivedReviews     PeerReview[] @relation("PeerReviewee")
+  settings     UserSettings?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
@@ -44,6 +46,21 @@ model User {
 enum Role {
   CREATOR
   PARTICIPANT
+}
+
+// 사용자 설정
+model UserSettings {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifyDueDate       Boolean @default(true)
+  notifyDueDays       Int     @default(1)
+  notifyPeerReview    Boolean @default(true)
+  notifySubTaskAssign Boolean @default(true)
+  theme               String  @default("dark")
+  heatmapColor        String  @default("green")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 // 프로젝트

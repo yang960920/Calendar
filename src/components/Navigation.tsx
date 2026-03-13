@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarIcon, LayoutDashboardIcon, FolderKanbanIcon, UserCircle, LogOut } from "lucide-react";
+import { CalendarIcon, LayoutDashboardIcon, FolderKanbanIcon, Settings, UserCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStore } from "@/hooks/useStore";
+import { getUserProfile } from "@/app/actions/settings";
 
 export const Navigation = () => {
     const pathname = usePathname() || "/";
@@ -55,6 +56,17 @@ export const Navigation = () => {
                     <CalendarIcon className="h-4 w-4" />
                     <span>연간 히트맵</span>
                 </Link>
+
+                <Link
+                    href="/settings"
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                        pathname === "/settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                >
+                    <Settings className="h-4 w-4" />
+                    <span>Keeper Settings</span>
+                </Link>
             </div>
 
             {/* 하단 유저 프로필 및 로그아웃 영역 */}
@@ -62,7 +74,7 @@ export const Navigation = () => {
                 <div className="p-4 border-t bg-muted/30">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 overflow-hidden">
-                            <UserCircle className="h-8 w-8 text-muted-foreground" />
+                            <ProfileAvatar userId={user.id} />
                             <div className="flex flex-col truncate">
                                 <span className="text-sm font-semibold truncate">{user.name}</span>
                                 <span className="text-[10px] text-muted-foreground truncate">
@@ -79,3 +91,27 @@ export const Navigation = () => {
         </nav>
     );
 };
+
+// 프로필 아바타 컴포넌트
+function ProfileAvatar({ userId }: { userId: string }) {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        getUserProfile(userId).then(res => {
+            if (res.success && res.data?.profileImageUrl) {
+                setImageUrl(res.data.profileImageUrl);
+            }
+        });
+    }, [userId]);
+
+    if (imageUrl) {
+        return (
+            <img
+                src={imageUrl}
+                alt="프로필"
+                className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
+            />
+        );
+    }
+    return <UserCircle className="h-8 w-8 text-muted-foreground" />;
+}

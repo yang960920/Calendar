@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HeatmapCalendar } from "@/components/HeatmapCalendar";
 import { TaskForm } from "@/components/TaskForm";
 import {
@@ -14,12 +14,23 @@ import { CategoryBarChart } from "@/components/CategoryBarChart";
 import { YearlyTaskList } from "@/components/YearlyTaskList";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useStore } from "@/hooks/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { getUserSettings } from "@/app/actions/settings";
 
 export default function YearlyPage() {
     const currentDate = new Date();
     const [selectedYear, setSelectedYear] = useState(String(Math.max(2026, currentDate.getFullYear())));
 
     const tasks = useStore(useTaskStore, (state) => state.tasks) || [];
+    const user = useStore(useAuthStore, (s) => s.user);
+    const [heatmapColor, setHeatmapColor] = useState("green");
+
+    useEffect(() => {
+        if (!user) return;
+        getUserSettings(user.id).then(res => {
+            if (res.success && res.data) setHeatmapColor(res.data.heatmapColor);
+        });
+    }, [user]);
 
     // 해당 연도 전체 통계 데이터 일부 계산 (필요시 컴포넌트 분리 가능)
     const yearlyTasks = tasks.filter(t => t.date.startsWith(selectedYear));
@@ -32,7 +43,7 @@ export default function YearlyPage() {
             {/* 사이드바 영역 */}
             <aside className="w-64 border-r hidden md:flex flex-col flex-shrink-0 bg-muted/20">
                 <div className="p-6 border-b">
-                    <h2 className="text-xl font-bold tracking-tight text-primary">Keeper Settings</h2>
+                    <h2 className="text-xl font-bold tracking-tight text-primary">Yearly Overview</h2>
                 </div>
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     <div className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
@@ -74,7 +85,7 @@ export default function YearlyPage() {
 
                 <div className="container mx-auto px-4 md:px-12 py-8 space-y-8 max-w-7xl">
                     <section>
-                        <HeatmapCalendar year={selectedYear} />
+                        <HeatmapCalendar year={selectedYear} colorPalette={heatmapColor} />
                     </section>
 
                     <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">

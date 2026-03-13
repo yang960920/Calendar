@@ -9,9 +9,10 @@ import { EditTaskDialog } from "@/components/EditTaskDialog";
 
 interface YearlyTaskListProps {
     year: string;
+    month?: string;
 }
 
-export const YearlyTaskList = ({ year }: YearlyTaskListProps) => {
+export const YearlyTaskList = ({ year, month }: YearlyTaskListProps) => {
     const tasks = useStore(useTaskStore, (state) => state.tasks) || [];
     const [mounted, setMounted] = useState(false);
 
@@ -27,6 +28,12 @@ export const YearlyTaskList = ({ year }: YearlyTaskListProps) => {
     // 선택된 연도 및 검색어에 해당하는 데이터만 필터링
     const filteredTasks = useMemo(() => {
         let result = tasks.filter((task) => task.date.startsWith(year));
+
+        // 월 필터
+        if (month) {
+            const mm = month.padStart(2, "0");
+            result = result.filter((task) => task.date.substring(5, 7) === mm);
+        }
 
         if (searchTerm.trim() !== "") {
             const lowerSearchTerm = searchTerm.toLowerCase();

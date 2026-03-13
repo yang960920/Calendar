@@ -328,6 +328,7 @@ export async function updateSubTask(subTaskId: string, data: {
         const subTask = await prisma.subTask.update({
             where: { id: subTaskId },
             data: updateData,
+            include: { assignee: { select: { name: true } } },
         });
 
         revalidatePath("/");

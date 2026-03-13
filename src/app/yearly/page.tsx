@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { HeatmapCalendar } from "@/components/HeatmapCalendar";
 import { TaskForm } from "@/components/TaskForm";
 import {
@@ -14,23 +14,14 @@ import { CategoryBarChart } from "@/components/CategoryBarChart";
 import { YearlyTaskList } from "@/components/YearlyTaskList";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useStore } from "@/hooks/useStore";
-import { useAuthStore } from "@/store/useAuthStore";
-import { getUserSettings } from "@/app/actions/settings";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export default function YearlyPage() {
     const currentDate = new Date();
     const [selectedYear, setSelectedYear] = useState(String(Math.max(2026, currentDate.getFullYear())));
 
     const tasks = useStore(useTaskStore, (state) => state.tasks) || [];
-    const user = useStore(useAuthStore, (s) => s.user);
-    const [heatmapColor, setHeatmapColor] = useState("green");
-
-    useEffect(() => {
-        if (!user) return;
-        getUserSettings(user.id).then(res => {
-            if (res.success && res.data) setHeatmapColor(res.data.heatmapColor);
-        });
-    }, [user]);
+    const heatmapColor = useStore(useSettingsStore, (s) => s.heatmapColor) || "green";
 
     // 해당 연도 전체 통계 데이터 일부 계산 (필요시 컴포넌트 분리 가능)
     const yearlyTasks = tasks.filter(t => t.date.startsWith(selectedYear));

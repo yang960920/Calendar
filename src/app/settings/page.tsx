@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useStore } from "@/hooks/useStore";
 import {
     getUserProfile,
@@ -29,6 +30,7 @@ const HEATMAP_PALETTES: Record<string, { label: string; colors: string[] }> = {
 export default function SettingsPage() {
     const user = useStore(useAuthStore, (s) => s.user);
     const setProfileImage = useAuthStore((s) => s.setProfileImage);
+    const setHeatmapColorStore = useSettingsStore((s) => s.setHeatmapColor);
     const { theme, setTheme } = useTheme();
 
     // 프로필 상태
@@ -64,6 +66,7 @@ export default function SettingsPage() {
                 if (profileRes.success && profileRes.data) setProfile(profileRes.data);
                 if (settingsRes.success && settingsRes.data) {
                     setSettings(settingsRes.data);
+                    setHeatmapColorStore(settingsRes.data.heatmapColor);
                 }
                 setProfileLoading(false);
                 setSettingsLoading(false);
@@ -119,6 +122,7 @@ export default function SettingsPage() {
         if (!user) return;
         const res = await updateUserSettings(user.id, settings);
         if (res.success) {
+            setHeatmapColorStore(settings.heatmapColor); // store 즉시 동기화
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         }

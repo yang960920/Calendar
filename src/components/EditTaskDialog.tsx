@@ -292,11 +292,16 @@ export const EditTaskDialog = ({ open, onOpenChange, task, readonly = false, edi
                                     await deleteSubTask(subTaskId);
                                 }}
                                 onUpdate={async (subTaskId, data) => {
-                                    // Zustand 로컬 업데이트 (제목만 기존 함수 사용)
-                                    if (data.title) {
-                                        updateSubTaskLocalFn(task.id, subTaskId, data.title);
-                                    }
-                                    await updateSubTask(subTaskId, data);
+                                    const res = await updateSubTask(subTaskId, data);
+                                    // Zustand 로컬 업데이트 (전체 필드 동기화)
+                                    updateSubTaskLocalFn(task.id, subTaskId, {
+                                        ...(data.title !== undefined && { title: data.title }),
+                                        ...(data.description !== undefined && { description: data.description }),
+                                        ...(data.assigneeId !== undefined && { assigneeId: data.assigneeId }),
+                                        ...(data.dueDate !== undefined && { dueDate: data.dueDate }),
+                                        ...(data.endDate !== undefined && { endDate: data.endDate }),
+                                        ...(res.success && res.data?.assignee && { assigneeName: res.data.assignee.name }),
+                                    });
                                 }}
                             />
                         </div>

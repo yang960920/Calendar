@@ -43,7 +43,7 @@ interface TaskState {
     addSubTaskLocal: (taskId: string, subTask: SubTask) => void;
     toggleSubTaskLocal: (taskId: string, subTaskId: string) => void;
     deleteSubTaskLocal: (taskId: string, subTaskId: string) => void;
-    updateSubTaskLocal: (taskId: string, subTaskId: string, title: string) => void;
+    updateSubTaskLocal: (taskId: string, subTaskId: string, data: Partial<SubTask>) => void;
 }
 
 export const useTaskStore = create<TaskState>()(
@@ -106,14 +106,14 @@ export const useTaskStore = create<TaskState>()(
                             : t
                     ),
                 })),
-            updateSubTaskLocal: (taskId, subTaskId, title) =>
+            updateSubTaskLocal: (taskId, subTaskId, data) =>
                 set((state) => ({
                     tasks: state.tasks.map((t) =>
                         t.id === taskId
                             ? {
                                 ...t,
                                 subTasks: (t.subTasks || []).map((st) =>
-                                    st.id === subTaskId ? { ...st, title } : st
+                                    st.id === subTaskId ? { ...st, ...data } : st
                                 ),
                             }
                             : t

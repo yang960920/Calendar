@@ -136,7 +136,7 @@ export const ProjectTaskListDialog = ({ projectId }: ProjectTaskListDialogProps)
                     전체 업무 리스트
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
+            <DialogContent className="max-w-7xl w-[95vw] max-h-[90vh] h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <ListChecks className="h-5 w-5" />

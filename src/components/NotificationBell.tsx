@@ -102,8 +102,8 @@ export function NotificationBell() {
                     {/* 배경 오버레이 */}
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
 
-                    {/* 드롭다운 */}
-                    <div className="absolute right-0 top-full mt-2 w-[380px] max-h-[480px] bg-background border rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
+                    {/* 드롭다운 - 사이드바 위로 열림 */}
+                    <div className="fixed bottom-16 left-4 w-[380px] max-h-[480px] bg-background border rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
                         {/* 헤더 */}
                         <div className="flex items-center justify-between px-4 py-3 border-b">
                             <h3 className="font-semibold text-sm">알림</h3>

@@ -237,3 +237,66 @@ model PeerReview {
 
   @@unique([projectId, reviewerId, revieweeId])
 }
+
+// ── 리포트 시스템 ──
+
+enum ReportType {
+  WEEKLY
+  MONTHLY
+}
+
+enum ReportScope {
+  COMPANY
+  DEPARTMENT
+  INDIVIDUAL
+}
+
+enum ReportStatus {
+  GENERATING
+  GENERATED
+  SENDING
+  SENT
+  FAILED
+}
+
+// 리포트 세트 (1회 생성 = 1개 ReportSet)
+model ReportSet {
+  id          String       @id @default(cuid())
+  type        ReportType
+  periodStart DateTime
+  periodEnd   DateTime
+  periodLabel String
+  status      ReportStatus @default(GENERATING)
+  reports     Report[]
+  sentAt      DateTime?
+  sentTo      String[]
+  error       String?
+  stats       Json?
+  createdAt   DateTime     @default(now())
+}
+
+// 개별 리포트 (전사/부서/개인 각각 1 레코드)
+model Report {
+  id           String      @id @default(cuid())
+  reportSetId  String
+  reportSet    ReportSet   @relation(fields: [reportSetId], references: [id], onDelete: Cascade)
+  scope        ReportScope
+  scopeLabel   String
+  departmentId String?
+  userId       String?
+  pdfUrl       String?
+  aiInsight    String?     @db.Text
+  stats        Json?
+  createdAt    DateTime    @default(now())
+}
+
+// 리포트 수신자 설정
+model ReportRecipient {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

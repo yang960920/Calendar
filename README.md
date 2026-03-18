@@ -13,6 +13,7 @@
 [![NeonDB](https://img.shields.io/badge/NeonDB-00E599?style=for-the-badge&logo=postgresql&logoColor=black)](https://neon.tech/)
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 [![Zustand](https://img.shields.io/badge/Zustand-443E38?style=for-the-badge&logo=react&logoColor=white)](https://zustand-demo.pmnd.rs/)
+[![Gemini AI](https://img.shields.io/badge/Gemini_AI-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 
 <br/>
 
@@ -45,6 +46,7 @@
         <li>Creator / Participant 역할 기반 접근 제어</li>
         <li><b>복수 담당자</b> 업무 할당 (M:N 관계)</li>
         <li>첨부파일 업로드 지원 (Vercel Blob)</li>
+        <li><b>프로젝트 종료</b> (보고서 첨부 + 피어리뷰)</li>
       </ul>
     </td>
   </tr>
@@ -71,11 +73,35 @@
   </tr>
   <tr>
     <td width="50%">
-      <h3>🔥 연간 히트맵</h3>
+      <h3>📄 PDF 리포트 자동 생성</h3>
       <ul>
-        <li>GitHub 스타일 연간 활동 히트맵</li>
-        <li>일별 업무 달성도 색상 시각화</li>
-        <li>연간 업무 리스트 & 통계 조회</li>
+        <li><b>주간(매주 금)</b> + <b>월간(매월 1일)</b> 자동 생성 (Vercel Cron)</li>
+        <li><b>3계층 구조</b>: 전사 종합 → 부서별 → 개인별 PDF</li>
+        <li><b>Gemini AI</b> 인사이트 코멘트 자동 포함</li>
+        <li>한글 폰트(NotoSansKR) 임베딩</li>
+        <li>Vercel Blob 보관 + 이메일 자동/수동 발송</li>
+        <li>관리자 대시보드에서 이력 조회/다운로드/수신자 관리</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>🔔 알림 시스템</h3>
+      <ul>
+        <li><b>독촉 알림</b>: 프로젝트 생성자 → 담당자 업무 독촉</li>
+        <li>24시간 쿨다운 (스팸 방지)</li>
+        <li><b>마감 알림</b>: D-day 설정값 기반 지연 예정 업무 뱃지</li>
+        <li>알림 벨 (30초 폴링, 읽음/미읽음 관리)</li>
+        <li>개인 설정에서 알림 수신 ON/OFF</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>🤖 AI 어시스턴트</h3>
+      <ul>
+        <li>Gemini 2.5 Flash 기반 업무 분석</li>
+        <li>주간보고, 마감 알림, 지연 업무 등 <b>5종 프리셋</b></li>
+        <li>업무 데이터 기반 맥락 인지 대화</li>
+        <li>3모델 폴백 (2.5→2.0→1.5 Flash)</li>
       </ul>
     </td>
     <td width="50%">
@@ -85,17 +111,26 @@
         <li>실시간 업무 추적 (진행률, 지연 현황)</li>
         <li>부서별 성과 비교 분석 차트</li>
         <li>활동 로그 감사 추적 (Audit Trail)</li>
+        <li><b>PDF 리포트 관리</b> (생성/다운로드/이메일 발송)</li>
       </ul>
     </td>
   </tr>
   <tr>
-    <td colspan="2">
-      <h3>📈 공헌도 자동 산출 시스템</h3>
+    <td width="50%">
+      <h3>🔥 연간 히트맵</h3>
       <ul>
-        <li><b>프로젝트 업무에만</b> 자동 공헌도 산출 (개인 업무 제외)</li>
-        <li>산출 공식: <code>기간 기반 점수 × 복잡도(SubTask 수) × 기한 보너스 ÷ 담당자 수</code></li>
-        <li><b>소요율 상한선</b>: 설정 기간 대비 실제 소요 30% 미만 시 보너스 제한 (악용 방지)</li>
-        <li>관리자(Admin) 전용 — 부서장·직원에게 <b>비공개</b></li>
+        <li>GitHub 스타일 연간 활동 히트맵</li>
+        <li>일별 업무 달성도 색상 시각화</li>
+        <li>연간 업무 리스트 & 통계 조회</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>📈 공헌도 자동 산출</h3>
+      <ul>
+        <li><b>프로젝트 업무에만</b> 자동 공헌도 산출</li>
+        <li>산출: <code>기간 × 복잡도 × 기한보너스 ÷ 담당자수</code></li>
+        <li><b>소요율 상한선</b>: 30% 미만 시 보너스 제한</li>
+        <li>관리자(Admin) 전용 — 직원에게 <b>비공개</b></li>
       </ul>
     </td>
   </tr>
@@ -121,31 +156,43 @@
         <img src="https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=black" alt="React"/>
         <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript"/>
       </td>
-      <td>App Router 기반 SSR/CSR 하이브리드 렌더링, React 19 최신 기능 활용</td>
+      <td>App Router 기반 SSR/CSR 하이브리드 렌더링</td>
     </tr>
     <tr>
       <td><b>🎨 Styling</b></td>
       <td>
         <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind"/>
-        <img src="https://img.shields.io/badge/Radix_UI-161618?logo=radixui&logoColor=white" alt="Radix UI"/>
         <img src="https://img.shields.io/badge/shadcn/ui-000?logo=shadcnui&logoColor=white" alt="shadcn"/>
       </td>
-      <td>shadcn/ui 컴포넌트 시스템 + 다크/라이트 테마 지원</td>
+      <td>shadcn/ui 컴포넌트 + 다크/라이트 테마</td>
+    </tr>
+    <tr>
+      <td><b>🤖 AI</b></td>
+      <td>
+        <img src="https://img.shields.io/badge/Gemini_2.5-8E75B2?logo=google&logoColor=white" alt="Gemini"/>
+      </td>
+      <td>AI 어시스턴트 + PDF 리포트 인사이트 자동 생성</td>
+    </tr>
+    <tr>
+      <td><b>📄 PDF</b></td>
+      <td>
+        <img src="https://img.shields.io/badge/@react--pdf/renderer-E34F26?logo=adobeacrobatreader&logoColor=white" alt="react-pdf"/>
+      </td>
+      <td>서버사이드 PDF 생성 (한글 폰트 임베딩)</td>
     </tr>
     <tr>
       <td><b>📈 Charts</b></td>
       <td>
         <img src="https://img.shields.io/badge/Recharts-FF6384?logo=chartdotjs&logoColor=white" alt="Recharts"/>
-        <img src="https://img.shields.io/badge/HeatMap-green" alt="HeatMap"/>
       </td>
-      <td>Recharts 기반 Bar, Line, Category 차트 + 연간 히트맵 시각화</td>
+      <td>Bar, Line, Category 차트 + 연간 히트맵</td>
     </tr>
     <tr>
       <td><b>🗃️ State</b></td>
       <td>
         <img src="https://img.shields.io/badge/Zustand-443E38?logo=react&logoColor=white" alt="Zustand"/>
       </td>
-      <td>경량 전역 상태 관리 (Task, Project, Auth, Admin Store)</td>
+      <td>경량 전역 상태 관리</td>
     </tr>
     <tr>
       <td><b>🛢️ Database</b></td>
@@ -153,21 +200,28 @@
         <img src="https://img.shields.io/badge/Prisma_ORM-2D3748?logo=prisma&logoColor=white" alt="Prisma"/>
         <img src="https://img.shields.io/badge/NeonDB-00E599?logo=postgresql&logoColor=black" alt="NeonDB"/>
       </td>
-      <td>Prisma ORM + NeonDB (Serverless PostgreSQL) 연동</td>
+      <td>Prisma ORM + NeonDB (Serverless PostgreSQL)</td>
     </tr>
     <tr>
       <td><b>📦 Storage</b></td>
       <td>
         <img src="https://img.shields.io/badge/Vercel_Blob-000?logo=vercel&logoColor=white" alt="Vercel Blob"/>
       </td>
-      <td>첨부파일 및 이력서 업로드 (클라이언트 사이드 업로드)</td>
+      <td>첨부파일, PDF 리포트, 프로젝트 보고서 저장</td>
+    </tr>
+    <tr>
+      <td><b>📧 Email</b></td>
+      <td>
+        <img src="https://img.shields.io/badge/Nodemailer-22B573?logo=minutemailer&logoColor=white" alt="Nodemailer"/>
+      </td>
+      <td>Hiworks SMTP 연동, PDF 첨부 이메일 자동 발송</td>
     </tr>
     <tr>
       <td><b>☁️ Deploy</b></td>
       <td>
-        <img src="https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white" alt="Vercel"/>
+        <img src="https://img.shields.io/badge/Vercel_Pro-000?logo=vercel&logoColor=white" alt="Vercel"/>
       </td>
-      <td>Vercel 플랫폼 자동 배포 (CI/CD)</td>
+      <td>Vercel Pro 배포 + Cron Jobs (주간/월간 리포트)</td>
     </tr>
   </tbody>
 </table>
@@ -179,56 +233,53 @@
 ```
 keeper-calendar/
 ├── 📂 prisma/
-│   └── schema.prisma          # DB 스키마 (User, Project, Task, SubTask, ActivityLog 등)
-├── 📂 scripts/
-│   └── seed.ts                # 초기 데이터 시딩 스크립트
+│   └── schema.prisma              # DB 스키마 (20+ 모델)
+├── 📂 public/
+│   └── 📂 fonts/
+│       └── NotoSansKR-Variable.ttf # 한글 폰트 (PDF용)
 ├── 📂 src/
 │   ├── 📂 app/
-│   │   ├── page.tsx           # 🏠 메인 (월간 로그 대시보드)
-│   │   ├── 📂 login/          # 🔐 일반 사원 로그인
-│   │   ├── 📂 projects/       # 🗂️ 프로젝트 목록 & 상세
-│   │   ├── 📂 yearly/         # 🔥 연간 히트맵 & 통계
-│   │   ├── 📂 admin/          # 🛡️ 관리자 전용
-│   │   │   ├── login/         #    관리자 로그인
-│   │   │   ├── employees/     #    사원 관리
-│   │   │   ├── tracking/      #    실적 추적
-│   │   │   └── achievement/   #    성과 분석 (공헌도 포함)
-│   │   ├── 📂 actions/        # ⚡ Server Actions
-│   │   │   ├── task.ts        #    업무 CRUD + 공헌도 산출 + 활동 로그
-│   │   │   ├── achievement.ts #    성과 통계 (contributionScore 기반)
-│   │   │   ├── project.ts     #    프로젝트 생성
-│   │   │   ├── employee.ts    #    사원 관리 + 인증
-│   │   │   ├── tracking.ts    #    실적 데이터 조회
-│   │   │   └── init.ts        #    초기 데이터 로드
-│   │   └── 📂 api/            # API Routes
+│   │   ├── page.tsx               # 🏠 메인 (월간 로그 대시보드)
+│   │   ├── 📂 login/              # 🔐 일반 사원 로그인
+│   │   ├── 📂 projects/           # 🗂️ 프로젝트 목록 & 상세
+│   │   ├── 📂 yearly/            # 🔥 연간 히트맵 & 통계
+│   │   ├── 📂 settings/          # ⚙️ 개인 알림 설정
+│   │   ├── 📂 admin/             # 🛡️ 관리자 전용
+│   │   │   ├── employees/        #    사원 관리
+│   │   │   ├── tracking/         #    실적 추적
+│   │   │   ├── achievement/      #    성과 분석
+│   │   │   └── reports/          #    📄 PDF 리포트 관리 (NEW)
+│   │   ├── 📂 actions/           # ⚡ Server Actions
+│   │   │   ├── task.ts           #    업무 CRUD + 공헌도
+│   │   │   ├── report.ts         #    📄 리포트 생성/발송/이력 (NEW)
+│   │   │   ├── notification.ts   #    🔔 알림 (독촉/마감)
+│   │   │   ├── ai-chat.ts        #    🤖 AI 어시스턴트
+│   │   │   └── ...
+│   │   └── 📂 api/
+│   │       └── 📂 cron/          # ⏰ Vercel Cron (NEW)
+│   │           ├── weekly-report/ #    주간 리포트 (금 18:00 KST)
+│   │           └── monthly-report/#    월간 리포트 (1일 09:00 KST)
 │   ├── 📂 components/
-│   │   ├── CalendarGrid.tsx        # 캘린더 그리드 (최대 3개 + 우선순위 정렬)
-│   │   ├── DayDetailPopover.tsx    # 날짜 상세 Popover (전체 업무 리스트)
-│   │   ├── HeatmapCalendar.tsx     # 연간 히트맵
-│   │   ├── MonthlyBarChart.tsx     # 월별 Bar 차트
-│   │   ├── MonthlyLineChart.tsx    # 월별 Line 차트
-│   │   ├── CategoryBarChart.tsx    # 카테고리별 차트
-│   │   ├── MonthlySummaryWidget.tsx# 월간 요약 위젯
-│   │   ├── TaskForm.tsx            # 업무 등록 폼
-│   │   ├── ProjectTaskForm.tsx     # 프로젝트 업무 할당 폼
-│   │   ├── EditTaskDialog.tsx      # 업무 수정 다이얼로그
-│   │   ├── SubTaskPanel.tsx        # 하위업무 관리 패널
-│   │   ├── SubTaskInput.tsx        # 하위업무 입력 컴포넌트
-│   │   ├── CreateProjectDialog.tsx # 프로젝트 생성 다이얼로그
-│   │   ├── Navigation.tsx          # 사이드바 네비게이션
-│   │   ├── AuthProvider.tsx        # 인증 Provider
-│   │   ├── 📂 admin/              # 관리자 전용 컴포넌트
-│   │   └── 📂 ui/                 # shadcn/ui 기본 컴포넌트
-│   ├── 📂 store/              # Zustand 전역 상태
-│   │   ├── useTaskStore.ts    #    업무 상태 관리
-│   │   ├── useProjectStore.ts #    프로젝트 상태 관리
-│   │   ├── useAuthStore.ts    #    인증 상태 관리
-│   │   └── useAdminStore.ts   #    관리자 상태 관리
-│   ├── 📂 hooks/              # Custom React Hooks
-│   └── 📂 lib/                # 유틸리티
-│       ├── prisma.ts          #    Prisma Client
-│       └── contribution.ts    #    공헌도 자동 산출 유틸리티
-└── package.json
+│   │   ├── CalendarGrid.tsx       # 캘린더
+│   │   ├── NotificationBell.tsx   # 🔔 알림 벨
+│   │   ├── AIChatAssistant.tsx    # 🤖 AI 채팅
+│   │   ├── CloseProjectDialog.tsx # 📋 프로젝트 종료
+│   │   └── ...
+│   ├── 📂 lib/
+│   │   ├── 📂 report/            # 📄 PDF 리포트 엔진 (NEW)
+│   │   │   ├── data-collector.ts  #    3계층 데이터 수집
+│   │   │   ├── ai-insight.ts      #    Gemini AI 인사이트
+│   │   │   ├── pdf-generator.ts   #    PDF 오케스트레이션
+│   │   │   ├── email-sender.ts    #    이메일 발송
+│   │   │   └── 📂 pdf-templates/
+│   │   │       ├── CompanyReport.tsx     # 전사 종합 PDF
+│   │   │       ├── DepartmentReport.tsx  # 부서별 PDF
+│   │   │       ├── IndividualReport.tsx  # 개인별 PDF
+│   │   │       └── shared-styles.ts     # 공통 스타일
+│   │   ├── contribution.ts        # 공헌도 산출
+│   │   └── statistics.ts          # 통계 유틸
+│   └── 📂 store/                  # Zustand 전역 상태
+└── vercel.json                    # Cron 스케줄 설정
 ```
 
 ---
@@ -242,12 +293,12 @@ erDiagram
     User }o--o{ Task : multi_assigned
     User ||--o{ Project : creates
     User }o--o{ Project : participates
-    User ||--o{ ActivityLog : performs
+    User ||--o{ Notification : receives
     Project ||--o{ Task : has
-    Project ||--o{ ActivityLog : logs
+    Project ||--o{ PeerReview : has
     Task ||--o{ SubTask : contains
     Task ||--o{ Attachment : has
-    Task ||--o{ ActivityLog : logs
+    ReportSet ||--o{ Report : contains
 
     Department {
         string id PK
@@ -256,61 +307,64 @@ erDiagram
     User {
         string id PK
         string name
-        string password
         enum role
         string departmentId FK
-        string resumeUrl
     }
     Project {
         string id PK
         string name
-        string category
+        enum status
         string creatorId FK
-        datetime startDate
-        datetime endDate
+        datetime closedAt
     }
     Task {
         string id PK
         string title
-        string description
         enum status
         enum priority
-        float planned
         float contributionScore
-        string projectId FK
-        string assigneeId FK
-        datetime dueDate
         datetime endDate
         datetime completedAt
+        boolean isUrgent
     }
     SubTask {
         string id PK
         string title
-        string description
-        boolean isCompleted
         enum status
-        string taskId FK
-        string assigneeId FK
-        datetime dueDate
-        datetime completedAt
+        boolean isCompleted
     }
-    Attachment {
+    Notification {
         string id PK
+        enum type
+        string senderId FK
+        string recipientId FK
+        boolean isRead
+    }
+    ReportSet {
+        string id PK
+        enum type
+        string periodLabel
+        enum status
+        datetime sentAt
+    }
+    Report {
+        string id PK
+        enum scope
+        string scopeLabel
+        string pdfUrl
+        string aiInsight
+    }
+    ReportRecipient {
+        string id PK
+        string email UK
         string name
-        string url
-        int size
-        string type
-        string taskId FK
+        boolean isActive
     }
-    ActivityLog {
+    PeerReview {
         string id PK
-        string action
-        string entityType
-        string entityId
-        string details
-        string userId FK
         string projectId FK
-        string taskId FK
+        string reviewerId FK
+        int score
     }
 ```
 
@@ -323,13 +377,14 @@ erDiagram
 - **Node.js** 18.17 이상
 - **npm** 또는 **pnpm**
 - **NeonDB** 계정 ([neon.tech](https://neon.tech))
-- **Vercel** 계정 (배포 시)
+- **Vercel Pro** 계정 (Cron Jobs 사용 시)
+- **Gemini API Key** ([ai.google.dev](https://ai.google.dev))
 
 ### 설치 & 실행
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/your-username/keeper-calendar.git
+git clone https://github.com/HANMIRYANG/KeeperCalendar.git
 cd keeper-calendar
 
 # 2. 의존성 설치
@@ -342,8 +397,22 @@ cp .env.example .env
 `.env` 파일에 아래 내용을 설정합니다:
 
 ```env
+# 필수
 DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
-BLOB_READ_WRITE_TOKEN="vercel_blob_token_here"
+BLOB_READ_WRITE_TOKEN="vercel_blob_token"
+GEMINI_API_KEY="your_gemini_api_key"
+ADMIN_ID="admin_username"
+ADMIN_PASSWORD="admin_password"
+
+# PDF 리포트 이메일 발송 (선택)
+EMAIL_HOST=smtps.hiworks.com
+EMAIL_PORT=465
+EMAIL_USER=sender@company.com
+EMAIL_PASS=password
+EMAIL_FROM="Keeper Calendar <sender@company.com>"
+
+# Vercel Cron 인증 (선택)
+CRON_SECRET=your_cron_secret
 ```
 
 ```bash
@@ -351,10 +420,7 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_token_here"
 npx prisma generate
 npx prisma db push
 
-# 5. 초기 데이터 시딩 (부서 데이터)
-npm run seed
-
-# 6. 개발 서버 실행
+# 5. 개발 서버 실행
 npm run dev
 ```
 
@@ -371,6 +437,17 @@ npm run dev
 
 ---
 
+## ⏰ 자동 스케줄
+
+| 작업 | 주기 | 시간 (KST) | 경로 |
+|------|------|-----------|------|
+| 주간 리포트 | 매주 금요일 | 18:00 | `/api/cron/weekly-report` |
+| 월간 리포트 | 매월 1일 | 09:00 | `/api/cron/monthly-report` |
+
+> Vercel Cron Jobs는 Pro 플랜 이상에서 사용 가능합니다.
+
+---
+
 ## 📜 주요 npm 스크립트
 
 | 스크립트 | 설명 |
@@ -378,7 +455,6 @@ npm run dev
 | `npm run dev` | 개발 서버 실행 |
 | `npm run build` | Prisma 생성 + 프로덕션 빌드 |
 | `npm run start` | 프로덕션 서버 실행 |
-| `npm run seed` | 초기 부서 데이터 시딩 |
 | `npm run lint` | ESLint 검사 |
 
 ---
@@ -391,8 +467,8 @@ This project is private and proprietary.
 
 <div align="center">
 
-**Built with ❤️ using Next.js & NeonDB**
+**Built with ❤️ using Next.js, NeonDB & Gemini AI**
 
-<sub>© 2026 Keeper Calendar. All rights reserved.</sub>
+<sub>© 2026 Keeper Calendar — 한미르(주). All rights reserved.</sub>
 
 </div>

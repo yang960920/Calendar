@@ -73,6 +73,15 @@ export default function AdminLoginPage() {
                         {loading ? "로그인 중..." : "로그인"}
                     </Button>
                 </form>
+
+                <div className="mt-4 text-center">
+                    <button
+                        onClick={() => router.push("/login")}
+                        className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                        ← 직원 로그인으로 돌아가기
+                    </button>
+                </div>
             </div>
         </div>
     );

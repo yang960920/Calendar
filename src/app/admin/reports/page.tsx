@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FileBarChart, Plus, Trash2, Mail, Download, ChevronDown, Loader2, Send, RefreshCw, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { FileBarChart, Plus, Trash2, Mail, Download, ChevronDown, Loader2, Send, RefreshCw, Clock, CheckCircle2, XCircle, AlertTriangle, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -15,8 +15,15 @@ import {
     removeReportRecipient,
     toggleReportRecipient,
 } from "@/app/actions/report";
+import {
+    getAllProjectReportsForAdmin,
+    getUnreportedProjects,
+    generateProjectReportManual,
+    regenerateProjectReport,
+    confirmProjectReport,
+} from "@/app/actions/project-report";
 
-type Tab = "history" | "recipients" | "settings";
+type Tab = "history" | "recipients" | "settings" | "project";
 
 interface ReportSetItem {
     id: string;
@@ -65,6 +72,13 @@ export default function AdminReportsPage() {
     const [newName, setNewName] = useState("");
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+    // 성과 보고서 상태
+    const [projectReports, setProjectReports] = useState<any[]>([]);
+    const [unreportedProjects, setUnreportedProjects] = useState<any[]>([]);
+    const [selectedProjectId, setSelectedProjectId] = useState("");
+    const [generatingProject, setGeneratingProject] = useState(false);
+    const [detailReport, setDetailReport] = useState<any | null>(null);
+
     useEffect(() => {
         loadData();
     }, []);
@@ -77,6 +91,13 @@ export default function AdminReportsPage() {
         ]);
         if (setsRes.success) setReportSets(setsRes.data);
         if (recipRes.success) setRecipients(recipRes.data);
+        // 성과 보고서 로드
+        const [prRes, upRes] = await Promise.all([
+            getAllProjectReportsForAdmin(),
+            getUnreportedProjects(),
+        ]);
+        if (prRes.success && prRes.data) setProjectReports(prRes.data);
+        if (upRes.success && upRes.data) setUnreportedProjects(upRes.data);
         setLoading(false);
     };
 
@@ -137,9 +158,56 @@ export default function AdminReportsPage() {
         setRecipients(prev => prev.map(r => r.id === id ? { ...r, isActive } : r));
     };
 
+    // 성과 보고서 핸들러
+    const handleGenerateProjectReport = async () => {
+        if (!selectedProjectId) return;
+        setGeneratingProject(true);
+        setMessage({ type: "success", text: "성과 보고서 생성 중... AI 분석 및 PDF 생성이 진행됩니다." });
+        const res = await generateProjectReportManual(selectedProjectId);
+        if (res.success) {
+            setMessage({ type: "success", text: "성과 보고서 생성 완료!" });
+            setSelectedProjectId("");
+            loadData();
+        } else {
+            setMessage({ type: "error", text: res.error || "생성 실패" });
+        }
+        setGeneratingProject(false);
+    };
+
+    const handleRegenerateProject = async (projectId: string) => {
+        setMessage({ type: "success", text: "재생성 중..." });
+        const res = await regenerateProjectReport(projectId);
+        if (res.success) {
+            setMessage({ type: "success", text: "재생성 완료!" });
+            loadData();
+            setDetailReport(null);
+        } else {
+            setMessage({ type: "error", text: res.error || "재생성 실패" });
+        }
+    };
+
+    const handleConfirmProject = async (reportId: string) => {
+        const res = await confirmProjectReport(reportId);
+        if (res.success) {
+            setMessage({ type: "success", text: "확인 완료 처리되었습니다." });
+            loadData();
+            setDetailReport(null);
+        } else {
+            setMessage({ type: "error", text: res.error || "실패" });
+        }
+    };
+
+    const prStatusConfig: Record<string, { label: string; color: string }> = {
+        GENERATING: { label: "생성 중", color: "bg-yellow-500/20 text-yellow-400" },
+        GENERATED: { label: "대기중", color: "bg-blue-500/20 text-blue-400" },
+        SUBMITTED: { label: "제출됨", color: "bg-green-500/20 text-green-400" },
+        CONFIRMED: { label: "확인완료", color: "bg-zinc-500/20 text-zinc-400" },
+    };
+
     const tabs = [
         { id: "history" as Tab, label: "리포트 이력" },
         { id: "recipients" as Tab, label: "수신자 관리" },
+        { id: "project" as Tab, label: "성과 보고서" },
         { id: "settings" as Tab, label: "설정" },
     ];
 
@@ -409,6 +477,162 @@ export default function AdminReportsPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {tab === "project" && (
+                <div className="space-y-4">
+                    {/* 수동 생성 */}
+                    {unreportedProjects.length > 0 && (
+                        <div className="flex gap-2 items-end">
+                            <div className="flex-1">
+                                <label className="text-xs text-zinc-400 mb-1 block">미생성 프로젝트 선택</label>
+                                <select
+                                    value={selectedProjectId}
+                                    onChange={e => setSelectedProjectId(e.target.value)}
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200"
+                                >
+                                    <option value="">프로젝트 선택...</option>
+                                    {unreportedProjects.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name} ({p.creatorName}, ~{p.endDate})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <Button
+                                onClick={handleGenerateProjectReport}
+                                disabled={!selectedProjectId || generatingProject}
+                                className="bg-indigo-600 hover:bg-indigo-700 gap-1"
+                            >
+                                {generatingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                                수동 생성
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* 테이블 */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-zinc-800 text-zinc-400">
+                                    <th className="px-4 py-3 text-left">프로젝트명</th>
+                                    <th className="px-4 py-3 text-left">기간</th>
+                                    <th className="px-4 py-3 text-left">생성자</th>
+                                    <th className="px-4 py-3 text-center">완료율</th>
+                                    <th className="px-4 py-3 text-center">상태</th>
+                                    <th className="px-4 py-3 text-center">원본</th>
+                                    <th className="px-4 py-3 text-center">수정본</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {projectReports.map(r => {
+                                    const cfg = prStatusConfig[r.status] || prStatusConfig.GENERATED;
+                                    return (
+                                        <tr
+                                            key={r.id}
+                                            className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/50 cursor-pointer"
+                                            onClick={() => setDetailReport(r)}
+                                        >
+                                            <td className="px-4 py-3 text-zinc-200 font-medium">{r.projectName}</td>
+                                            <td className="px-4 py-3 text-zinc-400 text-xs">{r.startDate}~{r.endDate}</td>
+                                            <td className="px-4 py-3 text-zinc-400">{r.creatorName}</td>
+                                            <td className="px-4 py-3 text-center text-zinc-300">{r.stats?.completionRate || 0}%</td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${cfg.color}`}>
+                                                    {cfg.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <a
+                                                    href={r.originalUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-600/20 text-indigo-400 text-xs hover:bg-indigo-600/30"
+                                                    onClick={e => e.stopPropagation()}
+                                                >
+                                                    <Download className="h-3 w-3" /> 다운
+                                                </a>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                {r.revisedUrl ? (
+                                                    <a
+                                                        href={r.revisedUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-600/20 text-green-400 text-xs hover:bg-green-600/30"
+                                                        onClick={e => e.stopPropagation()}
+                                                    >
+                                                        <Download className="h-3 w-3" /> 다운
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-zinc-600">--</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {projectReports.length === 0 && (
+                                    <tr>
+                                        <td colSpan={7} className="px-5 py-8 text-center text-zinc-500">
+                                            <Award className="mx-auto h-10 w-10 mb-2 opacity-30" />
+                                            생성된 성과 보고서가 없습니다.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* 상세 다이얼로그 */}
+                    {detailReport && (
+                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDetailReport(null)}>
+                            <div className="bg-zinc-900 border border-zinc-700 rounded-xl max-w-lg w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-white">{detailReport.projectName} — 성과 보고서 상세</h3>
+
+                                <div className="space-y-3">
+                                    <div className="p-3 rounded bg-zinc-800">
+                                        <p className="text-xs text-zinc-400 mb-1">원본 (시스템 생성) — {new Date(detailReport.generatedAt).toLocaleDateString("ko-KR")}</p>
+                                        <a href={detailReport.originalUrl} target="_blank" rel="noopener noreferrer"
+                                           className="inline-flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-300">
+                                            <Download className="h-4 w-4" /> 원본 PDF 다운로드
+                                        </a>
+                                    </div>
+
+                                    {detailReport.revisedUrl ? (
+                                        <div className="p-3 rounded bg-zinc-800">
+                                            <p className="text-xs text-zinc-400 mb-1">수정본 (생성자 제출) — {detailReport.revisedAt ? new Date(detailReport.revisedAt).toLocaleDateString("ko-KR") : ""}</p>
+                                            <a href={detailReport.revisedUrl} target="_blank" rel="noopener noreferrer"
+                                               className="inline-flex items-center gap-1 text-sm text-green-400 hover:text-green-300">
+                                                <Download className="h-4 w-4" /> 수정본 PDF 다운로드
+                                            </a>
+                                            {detailReport.revisedComment && (
+                                                <p className="text-xs text-zinc-400 mt-2 border-t border-zinc-700 pt-2">
+                                                    코멘트: {detailReport.revisedComment}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="p-3 rounded bg-zinc-800 text-xs text-zinc-500">
+                                            수정본 미제출
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                                    {detailReport.status !== "CONFIRMED" && (
+                                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleConfirmProject(detailReport.id)}>
+                                            <CheckCircle2 className="h-4 w-4 mr-1" /> 확인 완료 처리
+                                        </Button>
+                                    )}
+                                    <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300" onClick={() => handleRegenerateProject(detailReport.projectId)}>
+                                        <RefreshCw className="h-4 w-4 mr-1" /> 재생성
+                                    </Button>
+                                    <Button size="sm" variant="ghost" className="text-zinc-400 ml-auto" onClick={() => setDetailReport(null)}>
+                                        닫기
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

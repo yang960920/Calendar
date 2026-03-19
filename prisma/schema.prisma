@@ -101,6 +101,7 @@ model Project {
   tasks        Task[]
   peerReviews  PeerReview[]
   activityLogs ActivityLog[]
+  projectReport   ProjectReport?
   status          ProjectStatus @default(ACTIVE)
   closedAt        DateTime?
   closeReason     String?       // 정상 완료, 조기 종료, 보류, 취소
@@ -300,3 +301,36 @@ model ReportRecipient {
   updatedAt DateTime @updatedAt
 }
 
+// ── 프로젝트 성과 보고서 (이중 트랙) ──
+
+enum ProjectReportStatus {
+  GENERATING     // 생성 중
+  GENERATED      // 생성 완료, 수정본 미제출
+  SUBMITTED      // Creator가 수정본 제출
+  CONFIRMED      // Admin 확인 완료
+}
+
+model ProjectReport {
+  id               String              @id @default(cuid())
+  projectId        String              @unique
+  project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // 이중 트랙 파일 관리
+  originalUrl      String              // 관리자 전용 원본 PDF (Blob)
+  originalFilename String
+  creatorUrl       String              // Creator에게 노출되는 PDF (Blob)
+  creatorFilename  String
+
+  // 수정본 (Creator 제출)
+  revisedUrl       String?
+  revisedFilename  String?
+  revisedAt        DateTime?
+  revisedComment   String?
+
+  // 메타데이터
+  status           ProjectReportStatus @default(GENERATED)
+  aiInsight        String?             @db.Text
+  stats            Json
+  generatedAt      DateTime            @default(now())
+  generatedBy      String?             // "SYSTEM" 또는 관리자 ID
+}

@@ -27,6 +27,7 @@ import {
 import { getEmployees } from "@/app/actions/employee";
 import { ProjectProgressWidget } from "@/components/ProjectProgressWidget";
 import PeerReviewDialog from "@/components/PeerReviewDialog";
+import { ProjectReportSection } from "@/components/ProjectReportSection";
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -157,6 +158,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
             {/* 프로젝트 진행도 위젯 */}
             <ProjectProgressWidget projectId={projectId} tasks={projectMonthTasks} />
+
+            {/* 성과 보고서 (프로젝트 종료 + Creator만) */}
+            {isProjectClosed && isProjectCreator && user && project.endDate && (
+                <ProjectReportSection
+                    projectId={projectId}
+                    userId={user.id}
+                    projectEndDate={project.endDate}
+                />
+            )}
 
             <main className="flex-1">
                 {/* 캘린더 그리드 영역 */}

@@ -3,8 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStore } from "@/hooks/useStore";
-import { getTodayAttendance } from "@/app/actions/attendance";
-import { clockOut } from "@/app/actions/attendance";
+import { getTodayAttendance, clockOut } from "@/app/actions/attendance";
 import { Clock, LogIn, LogOut, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -14,8 +13,8 @@ export function WorkClockWidget() {
     const user = useStore(useAuthStore, (s) => s.user);
     const [time, setTime] = useState(new Date());
     const [status, setStatus] = useState<AttendanceStatus>("NOT_CLOCKED_IN");
-    const [clockInTime, setClockInTime] = useState<string | null>(null);
-    const [clockOutTime, setClockOutTime] = useState<string | null>(null);
+    const [clockInTime, setClockInTime] = useState<Date | null>(null);
+    const [clockOutTimeStr, setClockOutTimeStr] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
     // 실시간 시계
@@ -30,10 +29,10 @@ export function WorkClockWidget() {
         getTodayAttendance(user.id).then((res) => {
             if (res.success && res.data) {
                 const ci = new Date(res.data.clockIn);
-                setClockInTime(ci.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
+                setClockInTime(ci);
                 if (res.data.clockOut) {
                     const co = new Date(res.data.clockOut);
-                    setClockOutTime(co.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
+                    setClockOutTimeStr(co.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
                     setStatus("CLOCKED_OUT");
                 } else {
                     setStatus("CLOCKED_IN");
@@ -51,8 +50,7 @@ export function WorkClockWidget() {
             const res = await clockOut(user.id);
             if (res.success) {
                 setStatus("CLOCKED_OUT");
-                const co = new Date();
-                setClockOutTime(co.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
+                setClockOutTimeStr(new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
             } else {
                 alert(res.error);
             }
@@ -61,9 +59,19 @@ export function WorkClockWidget() {
         }
     }, [user]);
 
+    // 근무 경과 시간 계산
+    const getElapsedTime = () => {
+        if (!clockInTime || status !== "CLOCKED_IN") return null;
+        const diffMs = time.getTime() - clockInTime.getTime();
+        const hours = Math.floor(diffMs / 3600000);
+        const mins = Math.floor((diffMs % 3600000) / 60000);
+        return `${hours}시간 ${mins}분`;
+    };
+
     const hours = time.getHours().toString().padStart(2, "0");
     const minutes = time.getMinutes().toString().padStart(2, "0");
     const seconds = time.getSeconds().toString().padStart(2, "0");
+    const elapsed = getElapsedTime();
 
     return (
         <div className="bg-card rounded-xl border shadow-sm p-5 flex flex-col h-full">
@@ -78,7 +86,7 @@ export function WorkClockWidget() {
             </div>
 
             {/* 시계 */}
-            <div className="text-center mb-3">
+            <div className="text-center mb-2">
                 <div className="text-3xl font-mono font-bold tracking-wider">
                     <span>{hours}</span>
                     <span className="animate-pulse">:</span>
@@ -88,30 +96,29 @@ export function WorkClockWidget() {
                 </div>
             </div>
 
+            {/* 경과 시간 */}
+            {elapsed && (
+                <p className="text-center text-xs text-primary/70 mb-2">근무 {elapsed}</p>
+            )}
+
             {/* 출퇴근 시간 */}
             <div className="flex justify-center gap-4 text-xs text-muted-foreground mb-3">
                 {clockInTime && (
                     <span className="flex items-center gap-1">
-                        <LogIn className="h-3 w-3 text-emerald-400" /> 출근 {clockInTime}
+                        <LogIn className="h-3 w-3 text-emerald-400" /> 출근 {clockInTime.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                 )}
-                {clockOutTime && (
+                {clockOutTimeStr && (
                     <span className="flex items-center gap-1">
-                        <LogOut className="h-3 w-3 text-orange-400" /> 퇴근 {clockOutTime}
+                        <LogOut className="h-3 w-3 text-orange-400" /> 퇴근 {clockOutTimeStr}
                     </span>
                 )}
             </div>
 
-            {/* 퇴근 버튼 */}
+            {/* 하단 */}
             <div className="mt-auto flex gap-2">
                 {status === "CLOCKED_IN" && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleClockOut}
-                        disabled={loading}
-                        className="w-full text-xs"
-                    >
+                    <Button variant="outline" size="sm" onClick={handleClockOut} disabled={loading} className="w-full text-xs">
                         <LogOut className="h-3 w-3 mr-1" />
                         {loading ? "처리 중..." : "퇴근하기"}
                     </Button>
@@ -123,9 +130,7 @@ export function WorkClockWidget() {
                     </div>
                 )}
                 {status === "CLOCKED_OUT" && (
-                    <div className="w-full text-center text-xs text-emerald-400">
-                        ✓ 오늘 근무 완료
-                    </div>
+                    <div className="w-full text-center text-xs text-emerald-400">✓ 오늘 근무 완료</div>
                 )}
             </div>
         </div>
@@ -133,11 +138,7 @@ export function WorkClockWidget() {
 }
 
 function StatusBadge({ status }: { status: AttendanceStatus }) {
-    if (status === "CLOCKED_IN") {
-        return <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400">출근 중</span>;
-    }
-    if (status === "CLOCKED_OUT") {
-        return <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold bg-orange-500/20 text-orange-400">퇴근</span>;
-    }
+    if (status === "CLOCKED_IN") return <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400">출근 중</span>;
+    if (status === "CLOCKED_OUT") return <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold bg-orange-500/20 text-orange-400">퇴근</span>;
     return <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-500/20 text-zinc-400">출근 전</span>;
 }

@@ -114,21 +114,38 @@ export async function getLoginHistory(userId: string) {
 }
 
 /**
- * 최근 활동 피드 조회 (전체 팀)
+ * 최근 활동 피드 조회 (내 활동 + 내가 생성한 프로젝트 참여자 활동)
  */
-export async function getActivityFeed() {
+export async function getActivityFeed(userId: string) {
     noStore();
     try {
+        // 1. 내가 생성한 프로젝트 ID 목록
+        const myProjects = await prisma.project.findMany({
+            where: {
+                OR: [
+                    { creatorId: userId },
+                    { participants: { some: { id: userId } } },
+                ],
+            },
+            select: { id: true },
+        });
+        const projectIds = myProjects.map((p) => p.id);
+
+        // 2. 내 활동 + 내 프로젝트 범위 활동
         const feed = await prisma.activityLog.findMany({
             where: {
                 action: { not: "LOGIN" },
+                OR: [
+                    { userId },
+                    { projectId: { in: projectIds } },
+                ],
             },
             include: {
                 user: { select: { id: true, name: true, profileImageUrl: true } },
                 project: { select: { name: true } },
             },
             orderBy: { createdAt: "desc" },
-            take: 10,
+            take: 30,
         });
 
         return { success: true, data: feed };

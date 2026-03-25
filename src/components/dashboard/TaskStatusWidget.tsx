@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useStore } from "@/hooks/useStore";
 import { getDashboardStats, getRecentTasks } from "@/app/actions/dashboard";
 import { ClipboardList, AlertTriangle } from "lucide-react";
+import { WidgetPagination, paginate } from "./WidgetPagination";
 
 interface TaskStats {
     total: number;
@@ -20,34 +21,33 @@ interface RecentTask {
     status: string;
     project: { name: string } | null;
     assignees: { id: string; name: string }[];
-    updatedAt: string;
 }
 
 export function TaskStatusWidget() {
     const user = useStore(useAuthStore, (s) => s.user);
     const [stats, setStats] = useState<TaskStats>({ total: 0, todo: 0, inProgress: 0, done: 0, urgent: 0 });
-    const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
+    const [allTasks, setAllTasks] = useState<RecentTask[]>([]);
+    const [filter, setFilter] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         if (!user) return;
-
         getDashboardStats(user.id).then((res) => {
-            if (res.success && res.data) {
-                setStats(res.data.taskStats);
-            }
+            if (res.success && res.data) setStats(res.data.taskStats);
         });
-
         getRecentTasks(user.id).then((res) => {
-            if (res.success && res.data) {
-                setRecentTasks(
-                    res.data.map((t: any) => ({
-                        ...t,
-                        updatedAt: t.updatedAt?.toISOString?.() ?? t.updatedAt,
-                    }))
-                );
-            }
+            if (res.success && res.data) setAllTasks(res.data as any);
         });
     }, [user]);
+
+    // 필터 적용
+    const filteredTasks = filter ? allTasks.filter((t) => t.status === filter) : allTasks;
+    const { items: pageItems, totalPages, currentPage } = paginate(filteredTasks, page);
+
+    const handleFilter = (status: string | null) => {
+        setFilter((prev) => (prev === status ? null : status));
+        setPage(1);
+    };
 
     return (
         <div className="bg-card rounded-xl border shadow-sm p-5 flex flex-col h-full">
@@ -56,21 +56,23 @@ export function TaskStatusWidget() {
                 <h3 className="text-sm font-bold">업무 현황</h3>
             </div>
 
-            {/* 상태 뱃지 */}
+            {/* 상태 뱃지 — 클릭하면 필터 */}
             <div className="flex flex-wrap gap-1.5 mb-3">
-                <Badge label="전체" value={stats.total} className="bg-zinc-700/50 text-zinc-200" />
-                <Badge label="대기" value={stats.todo} className="bg-slate-600/50 text-slate-200" />
-                <Badge label="진행" value={stats.inProgress} className="bg-blue-600/30 text-blue-300" />
-                <Badge label="완료" value={stats.done} className="bg-emerald-600/30 text-emerald-300" />
+                <FilterBadge label="전체" value={stats.total} active={filter === null} onClick={() => handleFilter(null)} className="bg-zinc-700/50 text-zinc-200" />
+                <FilterBadge label="대기" value={stats.todo} active={filter === "TODO"} onClick={() => handleFilter("TODO")} className="bg-slate-600/50 text-slate-200" />
+                <FilterBadge label="진행" value={stats.inProgress} active={filter === "IN_PROGRESS"} onClick={() => handleFilter("IN_PROGRESS")} className="bg-blue-600/30 text-blue-300" />
+                <FilterBadge label="완료" value={stats.done} active={filter === "DONE"} onClick={() => handleFilter("DONE")} className="bg-emerald-600/30 text-emerald-300" />
                 {stats.urgent > 0 && (
-                    <Badge label="긴급" value={stats.urgent} className="bg-red-600/30 text-red-300" icon={<AlertTriangle className="h-3 w-3" />} />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-600/30 text-red-300">
+                        <AlertTriangle className="h-3 w-3" /> 긴급 {stats.urgent}
+                    </span>
                 )}
             </div>
 
-            {/* 최근 업무 리스트 */}
+            {/* 업무 리스트 */}
             <div className="flex-1 space-y-1.5 overflow-y-auto">
-                {recentTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-sm hover:bg-muted/60 transition-colors">
+                {pageItems.map((task) => (
+                    <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-sm hover:bg-muted/60 transition-colors cursor-pointer">
                         <StatusDot status={task.status} />
                         <div className="flex-1 min-w-0">
                             <p className="truncate text-xs font-medium">{task.title}</p>
@@ -82,16 +84,22 @@ export function TaskStatusWidget() {
                     </div>
                 ))}
             </div>
+
+            <WidgetPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
         </div>
     );
 }
 
-function Badge({ label, value, className, icon }: { label: string; value: number; className: string; icon?: React.ReactNode }) {
+function FilterBadge({ label, value, active, onClick, className }: { label: string; value: number; active: boolean; onClick: () => void; className: string }) {
     return (
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${className}`}>
-            {icon}
+        <button
+            onClick={onClick}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all ${className} ${
+                active ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "opacity-70 hover:opacity-100"
+            }`}
+        >
             {label} {value}
-        </span>
+        </button>
     );
 }
 

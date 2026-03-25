@@ -23,7 +23,7 @@ export function AppGrid() {
     const isAdminAuth = useStore(useAdminStore, (s) => s.isAdminAuthenticated);
 
     return (
-        <div className="bg-card rounded-xl border shadow-sm p-5">
+        <div className="bg-card rounded-xl border shadow-sm p-5 h-full">
             <div className="flex items-center gap-2 mb-3">
                 <LayoutDashboard className="h-4 w-4 text-sky-400" />
                 <h3 className="text-sm font-bold">바로가기</h3>

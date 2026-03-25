@@ -20,44 +20,25 @@ export default function OfficeDashboard() {
             </header>
 
             <main className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto">
-                {/* 3×3 위젯 그리드 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-                    {/* Row 1 */}
-                    <div className="space-y-4">
-                        <UserProfileCard />
-                    </div>
-                    <div className="min-h-[220px]">
-                        <MailWidget />
-                    </div>
-                    <div className="min-h-[220px]">
-                        <LoginHistoryWidget />
-                    </div>
+                {/* 3×3 위젯 그리드 — 행별 동일 높이 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5 auto-rows-fr">
+                    {/* Row 1 — 프로필 / 알림 / 접속기록 */}
+                    <div className="lg:row-span-1"><UserProfileCard /></div>
+                    <div className="lg:row-span-1"><MailWidget /></div>
+                    <div className="lg:row-span-1"><LoginHistoryWidget /></div>
 
-                    {/* Row 2 */}
-                    <div>
-                        <AppGrid />
-                    </div>
-                    <div className="min-h-[280px]">
-                        <TaskStatusWidget />
-                    </div>
-                    <div className="min-h-[280px]">
-                        <WorkClockWidget />
-                    </div>
+                    {/* Row 2 — 앱그리드 / 업무상태 / 근무체크 */}
+                    <div className="lg:row-span-1"><AppGrid /></div>
+                    <div className="lg:row-span-1"><TaskStatusWidget /></div>
+                    <div className="lg:row-span-1"><WorkClockWidget /></div>
 
-                    {/* Row 3 */}
-                    <div className="min-h-[300px]">
-                        <MiniCalendar />
-                    </div>
-                    <div className="min-h-[300px]">
-                        <TodayTaskWidget />
-                    </div>
-                    <div className="min-h-[300px]">
-                        <ActivityFeedWidget />
-                    </div>
+                    {/* Row 3 — 미니캘린더 / 오늘할일 / 활동피드 */}
+                    <div className="lg:row-span-1"><MiniCalendar /></div>
+                    <div className="lg:row-span-1"><TodayTaskWidget /></div>
+                    <div className="lg:row-span-1"><ActivityFeedWidget /></div>
                 </div>
             </main>
 
-            {/* AI Chat Assistant */}
             <AIChatAssistant />
         </div>
     );

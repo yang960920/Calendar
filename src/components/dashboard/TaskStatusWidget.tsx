@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStore } from "@/hooks/useStore";
 import { getDashboardStats, getRecentTasks } from "@/app/actions/dashboard";
-import { ClipboardList, AlertTriangle } from "lucide-react";
+import { getTaskDetailsForModal } from "@/app/actions/task";
+import { ClipboardList, AlertTriangle, Loader2 } from "lucide-react";
 import { WidgetPagination, paginate } from "./WidgetPagination";
+import { EditTaskDialog } from "@/components/EditTaskDialog";
+import { Task } from "@/store/useTaskStore";
 
 interface TaskStats {
     total: number;
@@ -30,6 +33,11 @@ export function TaskStatusWidget() {
     const [filter, setFilter] = useState<string | null>(null);
     const [page, setPage] = useState(1);
 
+    // 모달 관리
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
+
     useEffect(() => {
         if (!user) return;
         getDashboardStats(user.id).then((res) => {
@@ -48,8 +56,20 @@ export function TaskStatusWidget() {
         setPage(1);
     };
 
+    const handleTaskClick = async (taskId: string) => {
+        setLoadingTaskId(taskId);
+        const res = await getTaskDetailsForModal(taskId);
+        setLoadingTaskId(null);
+        if (res.success && res.data) {
+            setSelectedTask(res.data as any);
+            setIsModalOpen(true);
+        } else {
+            alert(res.error || "업무 정보를 불러오는데 실패했습니다.");
+        }
+    };
+
     return (
-        <div className="bg-card rounded-xl border shadow-sm p-5 flex flex-col h-full">
+        <div className="bg-card rounded-xl border shadow-sm p-5 flex flex-col h-full relative">
             <div className="flex items-center gap-2 mb-2">
                 <ClipboardList className="h-4 w-4 text-indigo-400" />
                 <h3 className="text-sm font-bold">업무 현황</h3>
@@ -71,8 +91,16 @@ export function TaskStatusWidget() {
             {/* 업무 리스트 */}
             <div className="flex-1 space-y-1 overflow-y-auto">
                 {pageItems.map((task) => (
-                    <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-sm hover:bg-muted/60 transition-colors cursor-pointer">
-                        <StatusDot status={task.status} />
+                    <div 
+                        key={task.id} 
+                        onClick={() => handleTaskClick(task.id)}
+                        className={`flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-sm transition-colors cursor-pointer ${loadingTaskId === task.id ? "opacity-50 pointer-events-none" : "hover:bg-muted/60"}`}
+                    >
+                        {loadingTaskId === task.id ? (
+                            <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin shrink-0" />
+                        ) : (
+                            <StatusDot status={task.status} />
+                        )}
                         <div className="flex-1 min-w-0">
                             <p className="truncate text-xs font-medium">{task.title}</p>
                             <p className="text-[10px] text-muted-foreground truncate">{task.project?.name}</p>
@@ -85,6 +113,15 @@ export function TaskStatusWidget() {
             </div>
 
             <WidgetPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
+
+            {selectedTask && (
+                <EditTaskDialog
+                    open={isModalOpen}
+                    onOpenChange={setIsModalOpen}
+                    task={selectedTask}
+                    editMode="assignee"
+                />
+            )}
         </div>
     );
 }
@@ -106,3 +143,4 @@ function StatusDot({ status }: { status: string }) {
     const color = status === "DONE" ? "bg-emerald-400" : status === "IN_PROGRESS" ? "bg-blue-400" : "bg-zinc-400";
     return <span className={`h-2 w-2 rounded-full shrink-0 ${color}`} />;
 }
+

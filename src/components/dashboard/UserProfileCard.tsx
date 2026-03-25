@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useStore } from "@/hooks/useStore";
 import { getUserProfile } from "@/app/actions/settings";
 import { getDashboardStats } from "@/app/actions/dashboard";
-import { getMyNotifications, markAsRead, markAllAsRead } from "@/app/actions/notification";
+import { getMyNotifications, markAsRead, markAllAsRead, getUnreadCount } from "@/app/actions/notification";
 import { UserCircle, CalendarCheck, Bell, FolderOpen, CheckCheck, Megaphone, Clock, AlertTriangle, X } from "lucide-react";
 import { WidgetPagination, paginate } from "./WidgetPagination";
 
@@ -56,6 +56,18 @@ export function UserProfileCard() {
             }
         });
     }, [user, user?.profileImageUrl, setProfileImage]);
+
+    const fetchUnread = useCallback(async () => {
+        if (!user) return;
+        const count = await getUnreadCount(user.id);
+        setStats(prev => ({ ...prev, unreadNotifications: count }));
+    }, [user]);
+
+    // 30초마다 읽지 않은 알림 수 동기화 (NotificationBell과 동일하게 유지)
+    useEffect(() => {
+        const interval = setInterval(fetchUnread, 30000);
+        return () => clearInterval(interval);
+    }, [fetchUnread]);
 
     const handleAlarmClick = useCallback(async () => {
         if (!user) return;

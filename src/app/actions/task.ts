@@ -393,3 +393,56 @@ export async function deleteSubTask(subTaskId: string) {
         return { success: false, error: "하위 업무 삭제에 실패했습니다." };
     }
 }
+
+// ====== Dashboard / Modal Use ======
+export async function getTaskDetailsForModal(taskId: string) {
+    try {
+        const t = await prisma.task.findUnique({
+            where: { id: taskId },
+            include: {
+                assignees: { select: { id: true, name: true } },
+                subTasks: true,
+                project: { select: { name: true } },
+                attachments: true
+            }
+        });
+        if (!t) return { success: false, error: "업무를 찾을 수 없습니다." };
+        
+        const taskObj = {
+            id: t.id,
+            date: t.dueDate ? t.dueDate.toISOString().split("T")[0] : t.createdAt.toISOString().split("T")[0],
+            title: t.title,
+            content: t.description || undefined,
+            fileUrl: t.attachments?.length > 0 ? t.attachments[0].url : undefined,
+            category: "기타",
+            planned: t.planned || 1,
+            done: 0,
+            weight: t.planned || 1,
+            status: t.status,
+            projectId: t.projectId,
+            assigneeId: t.assigneeId || (t.assignees.length > 0 ? t.assignees[0].id : undefined),
+            assigneeIds: t.assignees.map(a => a.id),
+            assigneeNames: t.assignees.map(a => a.name),
+            isCompleted: t.status === "DONE",
+            completedAt: t.completedAt ? t.completedAt.toISOString() : undefined,
+            endDate: t.endDate ? t.endDate.toISOString().split("T")[0] : undefined,
+            subTasks: t.subTasks.map(st => ({
+                id: st.id,
+                title: st.title,
+                description: st.description || undefined,
+                isCompleted: st.isCompleted,
+                status: st.status,
+                completedAt: st.completedAt ? st.completedAt.toISOString() : undefined,
+                assigneeId: st.assigneeId || undefined,
+                // 하위업무는 담당자 이름을 여기서 추가 페치하지 않음 (서브태스크 UI에서 필요에 따라 매핑)
+                dueDate: st.dueDate ? st.dueDate.toISOString().split("T")[0] : undefined,
+                endDate: st.endDate ? st.endDate.toISOString().split("T")[0] : undefined,
+            })),
+        };
+        
+        return { success: true, data: taskObj };
+    } catch (error) {
+        console.error("Failed to fetch task details:", error);
+        return { success: false, error: "상세 정보를 불러오는 중 오류가 발생했습니다." };
+    }
+}

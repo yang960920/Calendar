@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useStore } from "@/hooks/useStore";
 import { getDashboardStats } from "@/app/actions/dashboard";
+import { updateTaskStatus } from "@/app/actions/task";
 import { ListChecks, Circle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -29,6 +30,22 @@ export function TodayTaskWidget() {
         });
     }, [user]);
 
+    const handleToggleStatus = async (taskId: string, currentStatus: string) => {
+        const isCompleted = currentStatus !== "DONE";
+        
+        // 낙관적 업데이트 (UI 즉시 반영)
+        setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: isCompleted ? "DONE" : "TODO" } : t));
+
+        try {
+            const res = await updateTaskStatus(taskId, { done: 0, isCompleted });
+            if (!res.success) throw new Error(res.error || "상태 변경 실패");
+        } catch (error: any) {
+            // 실패 시 원상복구
+            setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: currentStatus } : t));
+            alert(error.message || "업무 상태 업데이트 중 오류가 발생했습니다.");
+        }
+    };
+
     const todayStr = format(new Date(), "M/d (eee)");
 
     return (
@@ -46,16 +63,21 @@ export function TodayTaskWidget() {
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 space-y-1.5 overflow-y-auto">
+                <div className="flex-1 space-y-1.5 overflow-y-auto pr-1">
                     {tasks.map((task) => (
-                        <div key={task.id} className="flex items-start gap-2 p-2 rounded-lg bg-black/20 text-sm">
-                            {task.status === "DONE" ? (
-                                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                            ) : (
-                                <Circle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                            )}
+                        <div key={task.id} className="flex items-start gap-2 p-2 rounded-lg bg-black/20 text-sm group hover:bg-black/40 transition-colors">
+                            <button
+                                onClick={() => handleToggleStatus(task.id, task.status)}
+                                className="mt-0.5 hover:scale-110 transition-transform shrink-0 outline-none"
+                            >
+                                {task.status === "DONE" ? (
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                                ) : (
+                                    <Circle className="h-4 w-4 text-amber-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+                                )}
+                            </button>
                             <div className="flex-1 min-w-0">
-                                <p className={`text-xs font-medium truncate ${task.status === "DONE" ? "line-through text-muted-foreground" : ""}`}>
+                                <p className={`text-xs font-medium truncate transition-all ${task.status === "DONE" ? "line-through text-muted-foreground" : ""}`}>
                                     {task.title}
                                 </p>
                                 <p className="text-[10px] text-muted-foreground truncate">

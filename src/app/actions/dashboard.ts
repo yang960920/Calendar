@@ -214,3 +214,36 @@ export async function getTaskDatesForMonth(userId: string, year: number, month: 
         return { success: false, error: "캘린더 데이터 조회 중 오류가 발생했습니다." };
     }
 }
+
+/**
+ * 특정 날짜의 업무 목록 조회 (미니캘린더 날짜 클릭용)
+ */
+export async function getTasksForDate(userId: string, dateStr: string) {
+    noStore();
+    try {
+        const date = new Date(dateStr);
+        date.setHours(0, 0, 0, 0);
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        const tasks = await prisma.task.findMany({
+            where: {
+                assignees: { some: { id: userId } },
+                OR: [
+                    { dueDate: { gte: date, lt: nextDay } },
+                    { endDate: { gte: date, lt: nextDay } },
+                ],
+            },
+            include: {
+                project: { select: { name: true } },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        return { success: true, data: tasks };
+    } catch (error) {
+        console.error("[Dashboard] getTasksForDate error:", error);
+        return { success: false, error: "날짜별 업무 조회 중 오류가 발생했습니다." };
+    }
+}
+

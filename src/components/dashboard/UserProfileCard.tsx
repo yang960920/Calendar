@@ -124,7 +124,7 @@ export function UserProfileCard() {
 
             {/* 빠른 통계 */}
             <div className="grid grid-cols-3 gap-2 mt-auto">
-                <button onClick={() => {}} className="focus:outline-none">
+                <button onClick={() => document.getElementById("today-task-widget")?.scrollIntoView({ behavior: "smooth" })} className="focus:outline-none">
                     <StatBadge icon={CalendarCheck} label="오늘 할 일" value={stats.todayTaskCount} color="text-blue-400" />
                 </button>
                 <button onClick={handleAlarmClick} className="focus:outline-none relative">

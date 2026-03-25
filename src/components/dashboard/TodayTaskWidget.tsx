@@ -32,7 +32,7 @@ export function TodayTaskWidget() {
     const todayStr = format(new Date(), "M/d (eee)");
 
     return (
-        <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl border border-amber-500/30 shadow-sm p-5 flex flex-col h-full">
+        <div id="today-task-widget" className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl border border-amber-500/30 shadow-sm p-5 flex flex-col h-full">
             <div className="flex items-center gap-2 mb-3">
                 <ListChecks className="h-4 w-4 text-amber-400" />
                 <h3 className="text-sm font-bold">{todayStr} 해야할 업무</h3>

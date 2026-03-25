@@ -42,8 +42,9 @@ export function LoginHistoryWidget() {
 
             <div className="flex-1 overflow-y-auto">
                 {pageItems.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm py-8">
-                        접속 기록이 없습니다
+                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-sm py-8 gap-1">
+                        <p>접속 기록이 없습니다</p>
+                        <p className="text-[10px]">로그인 시 자동으로 기록됩니다</p>
                     </div>
                 ) : (
                     <div className="space-y-2">

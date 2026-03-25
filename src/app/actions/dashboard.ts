@@ -103,7 +103,7 @@ export async function getLoginHistory(userId: string) {
                 action: "LOGIN",
             },
             orderBy: { createdAt: "desc" },
-            take: 5,
+            take: 20,
         });
 
         return { success: true, data: logs };
@@ -170,7 +170,6 @@ export async function getRecentTasks(userId: string) {
                 assignees: { select: { id: true, name: true } },
             },
             orderBy: { updatedAt: "desc" },
-            take: 5,
         });
 
         return { success: true, data: tasks };

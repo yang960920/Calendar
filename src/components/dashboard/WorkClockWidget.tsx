@@ -200,8 +200,8 @@ export function WorkClockWidget() {
 
     // ── 모달 오버레이 ──
     const ModalOverlay = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl z-10 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-card border rounded-lg p-4 w-full max-w-[280px] space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl z-10 flex items-center justify-center p-4" onMouseDown={onClose}>
+            <div className="bg-card border rounded-lg p-4 w-full max-w-[280px] space-y-3" onMouseDown={(e) => e.stopPropagation()}>
                 {children}
             </div>
         </div>

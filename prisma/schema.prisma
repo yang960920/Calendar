@@ -42,6 +42,8 @@ model User {
   attendances         Attendance[]
   deviceTokens        DeviceToken[]
   settings     UserSettings?
+  workStartTime String?    // 개인별 출근 기준 시간 (예: "09:30", null이면 기본 "09:00")
+  workEndTime   String?    // 개인별 퇴근 기준 시간 (예: "18:30", null이면 기본 "18:00")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }

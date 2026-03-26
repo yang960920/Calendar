@@ -34,10 +34,18 @@ export async function autoClockIn(userId: string, deviceToken?: string) {
             }
         }
 
-        // 지각 판정 (09:00 이후 출근 시 지각)
+        // 유저의 개인별 출근 기준 시간 조회
+        const userInfo = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { workStartTime: true },
+        });
+        const baseStartTime = userInfo?.workStartTime || "09:00";
+        const [startHour, startMin] = baseStartTime.split(":").map(Number);
+
+        // 지각 판정 (개인별 기준 시간 이후 출근 시 지각)
         const now = new Date();
         const lateThreshold = new Date(today);
-        lateThreshold.setHours(9, 0, 0, 0);
+        lateThreshold.setHours(startHour, startMin, 0, 0);
         const status = now > lateThreshold ? "LATE" : "PRESENT";
 
         const attendance = await prisma.attendance.create({

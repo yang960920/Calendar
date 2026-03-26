@@ -20,6 +20,8 @@ export async function getTodayAttendanceList() {
                 id: true,
                 name: true,
                 department: { select: { name: true } },
+                workStartTime: true,
+                workEndTime: true,
             },
             orderBy: { name: "asc" },
         });
@@ -45,6 +47,8 @@ export async function getTodayAttendanceList() {
                     clockOut: record.clockOut?.toISOString() || null,
                     status: record.clockOut ? "CLOCKED_OUT" : (record as any).status || "PRESENT",
                     deviceId: (record as any).deviceId,
+                    workStartTime: (user as any).workStartTime || null,
+                    workEndTime: (user as any).workEndTime || null,
                 };
             }
             return {
@@ -55,6 +59,8 @@ export async function getTodayAttendanceList() {
                 clockOut: null,
                 status: "ABSENT",
                 deviceId: null,
+                workStartTime: (user as any).workStartTime || null,
+                workEndTime: (user as any).workEndTime || null,
             };
         });
 
@@ -171,5 +177,24 @@ export async function getMonthlyAttendanceReport(year: number, month: number) {
     } catch (error) {
         console.error("[AdminAttendance] getMonthlyAttendanceReport error:", error);
         return { success: false, data: [], daysInMonth: 0 };
+    }
+}
+
+/**
+ * [관리자] 개인별 출퇴근 기준 시간 변경
+ */
+export async function updateUserWorkTime(userId: string, startTime: string | null, endTime: string | null) {
+    try {
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                workStartTime: startTime,
+                workEndTime: endTime,
+            },
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("[AdminAttendance] updateUserWorkTime error:", error);
+        return { success: false, error: "근무 시간 수정에 실패했습니다." };
     }
 }

@@ -3,30 +3,33 @@
 import { useEffect, useState } from "react";
 import { getTodayAttendanceList, getMonthlyAttendanceReport } from "@/app/actions/admin-attendance";
 import { getPendingDevicesAdmin, approveDeviceAdmin, rejectDeviceAdmin } from "@/app/actions/device-auth";
+import { getFieldWorkRequests, approveFieldWork, rejectFieldWork } from "@/app/actions/field-work";
 import { TodayAttendanceList } from "@/components/admin/TodayAttendanceList";
 import { MonthlyAttendanceTable } from "@/components/admin/MonthlyAttendanceTable";
 import { DeviceApprovalQueue } from "@/components/admin/DeviceApprovalQueue";
+import { FieldWorkQueue } from "@/components/admin/FieldWorkQueue";
 
-type TabType = "today" | "monthly" | "devices";
+type TabType = "today" | "monthly" | "devices" | "fieldwork";
 
 export default function AdminAttendancePage() {
     const [activeTab, setActiveTab] = useState<TabType>("today");
 
-    // 오늘의 근태 데이터
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [todayData, setTodayData] = useState<any[]>([]);
     const [todaySummary, setTodaySummary] = useState({ total: 0, present: 0, late: 0, absent: 0, clockedOut: 0 });
 
-    // 월간 데이터
     const now = new Date();
     const [selectedYear, setSelectedYear] = useState(now.getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [monthlyData, setMonthlyData] = useState<any[]>([]);
     const [daysInMonth, setDaysInMonth] = useState(0);
 
-    // 기기 승인 대기
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [pendingDevices, setPendingDevices] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [fieldRequests, setFieldRequests] = useState<any[]>([]);
 
-    // 탭 전환 시 데이터 로드
     useEffect(() => {
         if (activeTab === "today") {
             loadToday();
@@ -34,6 +37,8 @@ export default function AdminAttendancePage() {
             loadMonthly();
         } else if (activeTab === "devices") {
             loadDevices();
+        } else if (activeTab === "fieldwork") {
+            loadFieldWork();
         }
     }, [activeTab, selectedYear, selectedMonth]);
 
@@ -60,6 +65,13 @@ export default function AdminAttendancePage() {
         }
     };
 
+    const loadFieldWork = async () => {
+        const res = await getFieldWorkRequests("PENDING");
+        if (res.success) {
+            setFieldRequests(res.data || []);
+        }
+    };
+
     const handleApprove = async (tokenId: string) => {
         const res = await approveDeviceAdmin(tokenId);
         if (res.success) {
@@ -75,20 +87,38 @@ export default function AdminAttendancePage() {
         }
     };
 
+    const handleFieldApprove = async (requestId: string) => {
+        const res = await approveFieldWork(requestId);
+        if (res.success) {
+            setFieldRequests(prev => prev.filter(r => r.id !== requestId));
+        } else {
+            alert(res.error);
+        }
+    };
+
+    const handleFieldReject = async (requestId: string, reason?: string) => {
+        const res = await rejectFieldWork(requestId, reason);
+        if (res.success) {
+            setFieldRequests(prev => prev.filter(r => r.id !== requestId));
+        } else {
+            alert(res.error);
+        }
+    };
+
     const tabs = [
         { key: "today" as TabType, label: "오늘 근태 현황" },
         { key: "monthly" as TabType, label: "월간 리포트" },
-        { key: "devices" as TabType, label: `기기 승인 대기${pendingDevices.length > 0 ? ` (${pendingDevices.length})` : ""}` },
+        { key: "devices" as TabType, label: `기기 승인${pendingDevices.length > 0 ? ` (${pendingDevices.length})` : ""}` },
+        { key: "fieldwork" as TabType, label: `외근 승인${fieldRequests.length > 0 ? ` (${fieldRequests.length})` : ""}` },
     ];
 
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">근태 관리</h1>
-                <p className="text-sm text-zinc-400 mt-1">직원 출퇴근 현황 및 기기 관리</p>
+                <p className="text-sm text-zinc-400 mt-1">직원 출퇴근 현황, 기기 및 외근 관리</p>
             </div>
 
-            {/* 탭 네비게이션 */}
             <div className="flex gap-1 border-b border-zinc-800 pb-0">
                 {tabs.map(tab => (
                     <button
@@ -105,7 +135,6 @@ export default function AdminAttendancePage() {
                 ))}
             </div>
 
-            {/* 패널 영역 */}
             {activeTab === "today" && (
                 <TodayAttendanceList data={todayData} summary={todaySummary} onRefresh={loadToday} />
             )}
@@ -124,6 +153,13 @@ export default function AdminAttendancePage() {
                     devices={pendingDevices}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                />
+            )}
+            {activeTab === "fieldwork" && (
+                <FieldWorkQueue
+                    requests={fieldRequests}
+                    onApprove={handleFieldApprove}
+                    onReject={handleFieldReject}
                 />
             )}
         </div>

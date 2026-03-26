@@ -41,6 +41,7 @@ model User {
   notifications       Notification[]
   attendances         Attendance[]
   deviceTokens        DeviceToken[]
+  fieldWorkRequests   FieldWorkRequest[]
   settings     UserSettings?
   workStartTime String?    // 개인별 출근 기준 시간 (예: "09:30", null이면 기본 "09:00")
   workEndTime   String?    // 개인별 퇴근 기준 시간 (예: "18:30", null이면 기본 "18:00")
@@ -350,10 +351,34 @@ model Attendance {
   date      DateTime  // 근무일 (YYYY-MM-DD, 시간 00:00:00)
   status    String    @default("PRESENT") // PRESENT, LATE, ABSENT
   deviceId  String?   // 출퇴근 처리를 진행한 DeviceToken id
+
+  // 외근 관련 필드
+  workType       String  @default("OFFICE")   // OFFICE(내근), FIELD_PLANNED(사전외근), FIELD_EMERGENCY(긴급외근)
+  fieldReason    String? // 외근 사유 (예: "A사 영업 미팅")
+  fieldProofText String? // 사후 증빙 텍스트 (외근 결과 보고)
+  fieldProofUrl  String? // 사후 증빙 파일 URL (명함, 미팅 사진 등)
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   @@unique([userId, date])
+}
+
+// ── 외근 사전 신청 ──
+
+model FieldWorkRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime // 외근 예정일 (YYYY-MM-DD)
+  reason      String   // 외근 사유
+  status      String   @default("PENDING") // PENDING(대기), APPROVED(승인), REJECTED(반려)
+  rejectedReason String? // 반려 사유
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([status])
 }
 
 // ── 기기 인증 토큰 ──
